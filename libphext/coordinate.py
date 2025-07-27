@@ -34,6 +34,69 @@ class Coordinate:
         except Exception as e:
             raise ValueError(f"Invalid coordinate string: {coord_str} {e}") from e
 
+    def libraryBreak(self):
+        self.library += 1
+        self.shelf = 1
+        self.series = 1
+        self.collection = 1
+        self.volume = 1
+        self.book = 1
+        self.chapter = 1
+        self.section = 1
+        self.scroll = 1
+
+    def shelfBreak(self):
+        self.shelf += 1
+        self.series = 1
+        self.collection = 1
+        self.volume = 1
+        self.book = 1
+        self.chapter = 1
+        self.section = 1
+        self.scroll = 1
+
+    def seriesBreak(self):
+        self.series += 1
+        self.collection = 1
+        self.volume = 1
+        self.book = 1
+        self.chapter = 1
+        self.section = 1
+        self.scroll = 1
+
+    def collectionBreak(self):
+        self.collection += 1
+        self.volume = 1
+        self.book = 1
+        self.chapter = 1
+        self.section = 1
+        self.scroll = 1
+
+    def volumeBreak(self):
+        self.volume += 1
+        self.book = 1
+        self.chapter = 1
+        self.section = 1
+        self.scroll = 1
+
+    def bookBreak(self):
+        self.book += 1
+        self.chapter = 1
+        self.section = 1
+        self.scroll = 1
+
+    def chapterBreak(self):
+        self.chapter += 1
+        self.section = 1
+        self.scroll = 1
+
+    def sectionBreak(self):
+        self.section += 1
+        self.scroll = 1
+
+    def scrollBreak(self):
+        self.scroll += 1
+    
     def __init__(self, lb, sf, sr, cn, vm, bk, ch, sn, sc):
         self.library = int(lb)
         self.shelf = int(sf)
@@ -54,3 +117,13 @@ class Coordinate:
         return f"{self.library}.{self.shelf}.{self.series};" \
                f"{self.collection}.{self.volume}.{self.book};" \
                f"{self.chapter}.{self.section}.{self.scroll}"
+    
+    def __eq__(self, other):
+        return isinstance(self, Coordinate) and isinstance(other, Coordinate) and self.library == other.library and self.shelf == other.shelf and self.series == other.series and self.collection == other.collection and self.volume == other.volume and self.book == other.book and self.chapter == other.chapter and self.section == other.section and self.scroll == other.scroll
+
+    def __hash__(self):
+        return hash((
+            self.library, self.shelf, self.series,
+            self.collection, self.volume, self.book,
+            self.chapter, self.section, self.scroll
+        ))

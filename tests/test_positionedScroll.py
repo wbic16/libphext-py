@@ -32,3 +32,7 @@ def test_positioned_scrolls():
   assert data[0].text == text1
   assert data[1].text == text2
   assert data[2].text == text3
+
+def test_realistic_parse():
+  example = "here's some text at 6.13.4/2.11.4/2.20.3this is the next scroll and won't be picked"
+  #parsed = Phext.fetch(example)
