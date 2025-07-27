@@ -49,3 +49,8 @@ class Coordinate:
         return f"{self.library}.{self.shelf}.{self.series}/" \
                f"{self.collection}.{self.volume}.{self.book}/" \
                f"{self.chapter}.{self.section}.{self.scroll}"
+    
+    def urlencoded(self) -> str:
+        return f"{self.library}.{self.shelf}.{self.series};" \
+               f"{self.collection}.{self.volume}.{self.book};" \
+               f"{self.chapter}.{self.section}.{self.scroll}"

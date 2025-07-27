@@ -1,6 +1,13 @@
 from libphext import coordinate
 import pytest
 
+# Upstream tests covered by this module:
+# test_coordinate_parsing
+# test_to_urlencoded
+# test_coordinates_invalid
+# test_coordinates_valid
+# test_url_encoding
+
 # expected valid conditions
 
 def test_valid_home_coordinate():
@@ -62,6 +69,10 @@ def test_internal_whitespace_support():
    assert coord.chapter == 37
    assert coord.section == 28
    assert coord.scroll == 19
+
+def test_to_urlencoded():
+   coord = coordinate.Coordinate(98, 76, 54, 32, 10, 1, 23, 45, 67)
+   assert coord.urlencoded() == "98.76.54;32.10.1;23.45.67"
 
 # invalid conditions
 
