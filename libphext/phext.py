@@ -6,20 +6,20 @@ from typing import List
 from libphext.coordinate import Coordinate
 from libphext.positionedScroll import PositionedScroll
 
-LIBRARY_BREAK = "\x01"
-SHELF_BREAK = "\x1F"
-SERIES_BREAK = "\x1E"
-COLLECTION_BREAK = "\x1D"
-VOLUME_BREAK = "\x1C"
-BOOK_BREAK = "\x1A"
-CHAPTER_BREAK = "\x19"
-SECTION_BREAK = "\x18"
-SCROLL_BREAK = "\x17"
-
 @dataclass
 class Phext:
     ready: bool
     location: Coordinate
+
+    LIBRARY_BREAK = "\x01"
+    SHELF_BREAK = "\x1F"
+    SERIES_BREAK = "\x1E"
+    COLLECTION_BREAK = "\x1D"
+    VOLUME_BREAK = "\x1C"
+    BOOK_BREAK = "\x1A"
+    CHAPTER_BREAK = "\x19"
+    SECTION_BREAK = "\x18"
+    SCROLL_BREAK = "\x17"
     
     def defaultCoordinate(self) -> Coordinate:
        return Coordinate(1,1,1, 1,1,1, 1,1,1)
@@ -29,8 +29,11 @@ class Phext:
       ready = True
 
     def fetch(self, buffer, coord) -> dict[Coordinate, str]:
-       result = {}
-       return result
+      phokens = self.phokenize(buffer)
+      for ps in phokens:
+        if ps.coord == coord:
+          return ps.text
+      return ""
     
     def phokenize(self, buffer) -> List[PositionedScroll]:
       result = []
@@ -40,37 +43,36 @@ class Phext:
       # decoded = buffer.decode("utf-8")      
       for ch in buffer:
         dimension_break = False
-        if ch == LIBRARY_BREAK:
+        if ch == self.LIBRARY_BREAK:
           next.libraryBreak()
           dimension_break = True
-        if ch == SHELF_BREAK:
+        if ch == self.SHELF_BREAK:
           next.shelfBreak()
           dimension_break = True
-        if ch == SERIES_BREAK:
+        if ch == self.SERIES_BREAK:
           next.seriesBreak()
           dimension_break = True
-        if ch == COLLECTION_BREAK:
+        if ch == self.COLLECTION_BREAK:
           next.collectionBreak()
           dimension_break = True
-        if ch == VOLUME_BREAK:
+        if ch == self.VOLUME_BREAK:
           next.volumeBreak()
           dimension_break = True
-        if ch == BOOK_BREAK:
+        if ch == self.BOOK_BREAK:
           next.bookBreak()
           dimension_break = True
-        if ch == CHAPTER_BREAK:
+        if ch == self.CHAPTER_BREAK:
           next.chapterBreak()
           dimension_break = True
-        if ch == SECTION_BREAK:
+        if ch == self.SECTION_BREAK:
           next.sectionBreak()
           dimension_break = True
-        if ch == SCROLL_BREAK:
+        if ch == self.SCROLL_BREAK:
           next.scrollBreak()
           dimension_break = True
         
         if dimension_break == True:
           if len(temp) > 0:
-            print("Dumping " + temp + " @ " + str(location))
             item = PositionedScroll(location, temp)
             result.append(item)
             temp = ""
