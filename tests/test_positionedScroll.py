@@ -1,5 +1,6 @@
 from libphext.coordinate import Coordinate
 from libphext.positionedScroll import PositionedScroll
+from libphext.phext import Phext
 import pytest
 
 # Upstream tests covered by this module:
@@ -33,6 +34,17 @@ def test_positioned_scrolls():
   assert data[1].text == text2
   assert data[2].text == text3
 
-def test_realistic_parse():
+def test_phokenize():
   example = "here's some text at 6.13.4/2.11.4/2.20.3this is the next scroll and won't be picked"
-  #parsed = Phext.fetch(example)
+  phext = Phext()
+  parsed = phext.phokenize(example)
+  scroll1 = Coordinate(6,13,4, 2,11,4, 2,20,3)
+  text1 = "here's some text at 6.13.4/2.11.4/2.20.3"
+  scroll2 = Coordinate(6,13,4, 2,11,4, 2,20,4)
+  text2 = "this is the next scroll and won't be picked"
+  expected = [
+    PositionedScroll(scroll1, text1),
+    PositionedScroll(scroll2, text2)
+  ]
+
+  assert parsed == expected

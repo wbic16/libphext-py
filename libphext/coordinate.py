@@ -108,6 +108,17 @@ class Coordinate:
         self.section = int(sn)
         self.scroll = int(sc)
 
+    def copy_coordinate(self, other):
+        self.library = int(other.library)
+        self.shelf = int(other.shelf)
+        self.series = int(other.series)
+        self.collection = int(other.collection)
+        self.volume = int(other.volume)
+        self.book = int(other.book)
+        self.chapter = int(other.chapter)
+        self.section = int(other.section)
+        self.scroll = int(other.scroll)
+
     def __str__(self) -> str:
         return f"{self.library}.{self.shelf}.{self.series}/" \
                f"{self.collection}.{self.volume}.{self.book}/" \

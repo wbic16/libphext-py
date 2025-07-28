@@ -8,6 +8,9 @@ import pytest
 # test_coordinates_valid
 # test_url_encoding
 
+# notes
+# Apparently there aren't any test methods in libphext-rs for break methods?
+
 # expected valid conditions
 
 def test_valid_home_coordinate():
