@@ -12,6 +12,9 @@ class Phext:
     location: Coordinate
 
     LIBRARY_BREAK = "\x01"
+    STX_BREAK = "\x02"
+    ETX_BREAK = "\x03"
+    MORE_COWBELL = "\x07"
     SHELF_BREAK = "\x1F"
     SERIES_BREAK = "\x1E"
     COLLECTION_BREAK = "\x1D"
@@ -20,6 +23,7 @@ class Phext:
     CHAPTER_BREAK = "\x19"
     SECTION_BREAK = "\x18"
     SCROLL_BREAK = "\x17"
+    LINE_BREAK = "\x0a"
     
     def defaultCoordinate(self) -> Coordinate:
        return Coordinate(1,1,1, 1,1,1, 1,1,1)
@@ -84,4 +88,19 @@ class Phext:
         item = PositionedScroll(location, temp)
         result.append(item)
 
+      return result
+    
+    def insert(self, buffer, coord, scroll):
+      items = self.phokenize(buffer)
+      result = []
+      next = PositionedScroll(coord, scroll)
+      for ps in items:
+        if ps.coord > coord:
+          result.append(next)
+        if ps.coord == coord:
+          result.append(next)
+          continue
+        result.append(ps)
+      
+      # todo add dephokenize and re-serialize
       return result
