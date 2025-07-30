@@ -207,3 +207,16 @@ class Phext:
         if ps.coord > range.end and len(ps.text) > 0:
           result.append(ps)
       return self.dephokenize(result)
+    
+    def next_scroll(self, buffer, coord:Coordinate) -> List[PositionedScroll]:
+      stack = self.phokenize(buffer)
+      found = False
+      result = []
+      for ps in stack:
+        if found == True:
+          result.append(ps)
+          return result
+        if ps.coord >= coord:
+          result.append(ps)
+          found = True
+      return result

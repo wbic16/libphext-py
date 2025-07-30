@@ -409,8 +409,16 @@ def test_range_based_replace():
   update2 = phext.range_replace(doc2, range2, "")
   assert update2 == "Before\x01\x01\x01Library four"
 
+# note: next_scroll for python just returns the next two frames
 def test_next_scroll():
-  assert False
+  phext = Phext()
+  doc1 = "3A\x17B2\x18C1"
+  root = Coordinate.from_string("1.1.1/1.1.1/1.1.1")
+  temp = phext.next_scroll(doc1, root)
+  assert temp[0].coord == root
+  assert temp[0].text == "3A"
+  assert temp[1].coord == Coordinate.from_string("1.1.1/1.1.1/1.1.2")
+  assert temp[1].text == "B2"
 
 def test_last_empty_scroll():
   assert False
