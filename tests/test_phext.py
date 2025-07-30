@@ -340,7 +340,57 @@ def test_coordinate_based_replace():
   assert update_regression_2, "1.1.1\x171.1.2\x171.1.3\x171.1.4\x181.2.1\x171.2.2\x171.2.3\x171.2.4\x192.1.1\x193.1.1\x194.1.1\x1a2/1.1.1\x17new content\x172/1.1.3\x1c2.1/1.1.1\x1d2.1.1/1.1.1\x1e2/1.1.1/1.1.1\x1f2.1/1.1.1/1.1.1\x012.1.1/1.1.1/1.1.1"
 
 def test_coordinate_based_remove():
-  assert False
+  phext = Phext()
+
+  # replace 'aaa' with ''
+  coord1 = Coordinate.from_string("1.1.1/1.1.1/1.1.1")
+  update1 = phext.remove("aaa\x17bbb\x18ccc\x19ddd\x1Aeee\x1Cfff\x1Dggg\x1Ehhh\x1Fiii\x01jjj", coord1)
+  assert update1 == "\x17bbb\x18ccc\x19ddd\x1Aeee\x1Cfff\x1Dggg\x1Ehhh\x1Fiii\x01jjj"
+
+  # replace 'bbb' with ''
+  coord2 = Coordinate.from_string("1.1.1/1.1.1/1.1.2")
+  update2 = phext.remove(update1, coord2)
+  assert update2 == "\x18ccc\x19ddd\x1Aeee\x1Cfff\x1Dggg\x1Ehhh\x1Fiii\x01jjj"
+
+  # replace 'ccc' with ''
+  coord3 = Coordinate.from_string("1.1.1/1.1.1/1.2.1")
+  update3 = phext.remove(update2, coord3)
+  assert update3 == "\x19ddd\x1Aeee\x1Cfff\x1Dggg\x1Ehhh\x1Fiii\x01jjj"
+
+  # replace 'ddd' with ''
+  coord4 = Coordinate.from_string("1.1.1/1.1.1/2.1.1")
+  update4 = phext.remove(update3, coord4)
+  assert update4 == "\x1Aeee\x1Cfff\x1Dggg\x1Ehhh\x1Fiii\x01jjj"
+
+  # replace 'eee' with ''
+  coord5 = Coordinate.from_string("1.1.1/1.1.2/1.1.1")
+  update5 = phext.remove(update4, coord5)
+  assert update5 == "\x1Cfff\x1Dggg\x1Ehhh\x1Fiii\x01jjj"
+
+  # replace 'fff' with ''
+  coord6 = Coordinate.from_string("1.1.1/1.2.1/1.1.1")
+  update6 = phext.remove(update5, coord6)
+  assert update6 == "\x1Dggg\x1Ehhh\x1Fiii\x01jjj"
+
+  # replace 'ggg' with ''
+  coord7 = Coordinate.from_string("1.1.1/2.1.1/1.1.1")
+  update7 = phext.remove(update6, coord7)
+  assert update7 == "\x1Ehhh\x1Fiii\x01jjj"
+
+  # replace 'hhh' with ''
+  coord8 = Coordinate.from_string("1.1.2/1.1.1/1.1.1")
+  update8 = phext.remove(update7, coord8)
+  assert update8 == "\x1Fiii\x01jjj"
+
+  # replace 'iii' with ''
+  coord9 = Coordinate.from_string("1.2.1/1.1.1/1.1.1")
+  update9 = phext.remove(update8, coord9)
+  assert update9 == "\x01jjj"
+
+  # replace 'jjj' with ''
+  coord10 = Coordinate.from_string("2.1.1/1.1.1/1.1.1")
+  update10 = phext.remove(update9, coord10)
+  assert update10 == ""
 
 def test_range_based_replace():
   assert False

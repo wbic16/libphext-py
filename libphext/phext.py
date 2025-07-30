@@ -185,3 +185,7 @@ class Phext:
     
     def replace(self, buffer, coord, scroll):
       return self.update(buffer, coord, scroll, True)
+    
+    def remove(self, buffer, coord):
+      intermediate = self.update(buffer, coord, "", True)
+      return self.normalize(intermediate)
