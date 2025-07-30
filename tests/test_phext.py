@@ -1,5 +1,6 @@
 from libphext.coordinate import Coordinate
 from libphext.positionedScroll import PositionedScroll
+from libphext.range import Range
 from libphext.phext import Phext
 import pytest
 
@@ -393,7 +394,20 @@ def test_coordinate_based_remove():
   assert update10 == ""
 
 def test_range_based_replace():
-  assert False
+  phext = Phext()
+
+  doc1 = "Before\x19text to be replaced\x1Calso this\x1Dand this\x17After"
+  range1 = Range(Coordinate.from_string("1.1.1/1.1.1/2.1.1"),
+                 Coordinate.from_string("1.1.1/2.1.1/1.1.1"))
+  update1 = phext.range_replace(doc1, range1, "")
+  assert update1 == "Before\x1d\x17After"
+
+  doc2 = "Before\x01Library two\x01Library three\x01Library four"
+  range2 = Range(Coordinate.from_string("2.1.1/1.1.1/1.1.1"),
+                 Coordinate.from_string("3.1.1/1.1.1/1.1.1"))
+
+  update2 = phext.range_replace(doc2, range2, "")
+  assert update2 == "Before\x01\x01\x01Library four"
 
 def test_next_scroll():
   assert False

@@ -5,6 +5,7 @@ from typing import List
 
 from libphext.coordinate import Coordinate
 from libphext.positionedScroll import PositionedScroll
+from libphext.range import Range
 
 @dataclass
 class Phext:
@@ -140,7 +141,8 @@ class Phext:
           output += Phext.SCROLL_BREAK
           location.scrollBreak()
           continue
-      output += entry.text
+      if len(entry.text) > 0:
+        output += entry.text
       result = PositionedScroll(location, output)
       return result
 
@@ -157,7 +159,7 @@ class Phext:
       arr = self.phokenize(buffer)
       return self.dephokenize(arr)
 
-    def update(self, buffer:str, coord:Coordinate, scroll:str, overwrite:bool):
+    def update(self, buffer:str, coord:Coordinate, scroll:str, overwrite:bool) -> str:
       items = self.phokenize(buffer)
       result = []
       next = PositionedScroll(coord, scroll)
@@ -180,12 +182,28 @@ class Phext:
       serialized = self.dephokenize(result)
       return serialized
     
-    def insert(self, buffer:str, coord:Coordinate, scroll:str):
+    def insert(self, buffer:str, coord:Coordinate, scroll:str) -> str:
       return self.update(buffer, coord, scroll, False)
     
-    def replace(self, buffer, coord, scroll):
+    def replace(self, buffer, coord, scroll) -> str:
       return self.update(buffer, coord, scroll, True)
     
-    def remove(self, buffer, coord):
+    def remove(self, buffer, coord) -> str:
       intermediate = self.update(buffer, coord, "", True)
       return self.normalize(intermediate)
+    
+    def range_replace(self, buffer, range:Range, text) -> str:
+      stack = self.phokenize(buffer)
+      result = []
+      appended = False      
+      for ps in stack:
+        if ps.coord < range.start and len(ps.text) > 0:
+          result.append(ps)
+        if ps.coord >= range.start and ps.coord <= range.end:          
+          if appended == False and len(text) > 0:
+            next = PositionedScroll(ps.coord, text)
+            result.append(next)
+            appended = True
+        if ps.coord > range.end and len(ps.text) > 0:
+          result.append(ps)
+      return self.dephokenize(result)
