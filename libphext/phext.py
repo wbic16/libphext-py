@@ -90,17 +90,77 @@ class Phext:
 
       return result
     
+    def append_scroll(self, entry: PositionedScroll, location: Coordinate) -> PositionedScroll:
+      output = ""
+      compare = entry.coord
+      while location < entry.coord:
+        if location.library < compare.library:
+          output += Phext.LIBRARY_BREAK
+          location.libraryBreak()
+          continue
+        if location.shelf < compare.shelf:
+          output += Phext.SHELF_BREAK
+          location.shelfBreak()
+          continue
+        if location.series < compare.series:
+          output += Phext.SERIES_BREAK
+          location.seriesBreak()
+          continue
+        if location.collection < compare.collection:
+          output += Phext.COLLECTION_BREAK
+          location.collectionBreak()
+          continue
+        if location.volume < compare.volume:
+          output += Phext.VOLUME_BREAK
+          location.volumeBreak()
+          continue
+        if location.book < compare.book:
+          output += Phext.BOOK_BREAK
+          location.bookBreak()
+          continue
+        if location.chapter < compare.chapter:
+          output += Phext.CHAPTER_BREAK
+          location.chapterBreak()
+          continue
+        if location.section < compare.section:
+          output += Phext.SECTION_BREAK
+          location.sectionBreak()
+          continue
+        if location.scroll < compare.scroll:
+          output += Phext.SCROLL_BREAK
+          location.scrollBreak()
+          continue
+      output += entry.text
+      result = PositionedScroll(location, output)
+      return result
+
+    def dephokenize(self, phokens: list[PositionedScroll]) -> str:
+      result = ""
+      location = self.defaultCoordinate()
+      for ps in phokens:
+        next = self.append_scroll(ps, location)
+        result += next.text
+        location = next.coord
+      return result
+
     def insert(self, buffer, coord, scroll):
       items = self.phokenize(buffer)
       result = []
       next = PositionedScroll(coord, scroll)
+      appended = False
       for ps in items:
-        if ps.coord > coord:
+        if (ps.coord > coord) and (appended == False):
           result.append(next)
-        if ps.coord == coord:
+          appended = True
+        if (ps.coord == coord) and (appended == False):
+          next.text = ps.text + next.text
           result.append(next)
+          appended = True
           continue
         result.append(ps)
-      
-      # todo add dephokenize and re-serialize
-      return result
+      if appended == False:
+        result.append(next)
+        appended = True
+
+      serialized = self.dephokenize(result)
+      return serialized

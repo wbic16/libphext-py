@@ -1,5 +1,7 @@
 from dataclasses import dataclass
+from functools import total_ordering
 
+@total_ordering
 @dataclass
 class Coordinate:
     library: int
@@ -131,6 +133,18 @@ class Coordinate:
     
     def __eq__(self, other):
         return isinstance(self, Coordinate) and isinstance(other, Coordinate) and self.library == other.library and self.shelf == other.shelf and self.series == other.series and self.collection == other.collection and self.volume == other.volume and self.book == other.book and self.chapter == other.chapter and self.section == other.section and self.scroll == other.scroll
+    
+    def __lt__(self, other):
+        if not isinstance(other, Coordinate):
+            return NotImplemented
+        return self.as_tuple() < other.as_tuple()
+    
+    def as_tuple(self) -> tuple:
+        return (
+            self.library, self.shelf, self.series,
+            self.collection, self.volume, self.book,
+            self.chapter, self.section, self.scroll
+        )
 
     def __hash__(self):
         return hash((

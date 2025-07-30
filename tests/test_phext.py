@@ -98,6 +98,17 @@ def test_more_cowbell():
 def test_coordinate_based_insert():
   phext = Phext()
   doc = "aaa\x01bbb\x17ccc"
+
+  test1 = phext.phokenize(doc)
+  precheck = [
+    PositionedScroll(Coordinate(1,1,1, 1,1,1, 1,1,1), "aaa"),
+    PositionedScroll(Coordinate(2,1,1, 1,1,1, 1,1,1), "bbb"),
+    PositionedScroll(Coordinate(2,1,1, 1,1,1, 1,1,2), "ccc")
+  ]
+  assert test1 == precheck
+  test2 = phext.dephokenize(test1)
+  assert test2 == doc
+
   coord1 = Coordinate.from_string("2.1.1/1.1.1/1.1.3")
   update1 = phext.insert(doc, coord1, "ddd")
   assert update1 == "aaa\x01bbb\x17ccc\x17ddd"
