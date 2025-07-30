@@ -39,6 +39,18 @@ class Phext:
           return ps.text
       return ""
     
+    def isPhextBreak(self, byte):
+      return byte == self.LINE_BREAK or \
+            byte == self.SCROLL_BREAK or \
+            byte == self.SECTION_BREAK or \
+            byte == self.CHAPTER_BREAK or \
+            byte == self.BOOK_BREAK or \
+            byte == self.VOLUME_BREAK or \
+            byte == self.COLLECTION_BREAK or \
+            byte == self.SERIES_BREAK or \
+            byte == self.SHELF_BREAK or \
+            byte == self.LIBRARY_BREAK
+    
     def phokenize(self, buffer) -> List[PositionedScroll]:
       result = []
       location = self.defaultCoordinate()
@@ -142,6 +154,10 @@ class Phext:
         result += next.text
         location = next.coord
       return result
+
+    def normalize(self, buffer) -> str:
+      arr = self.phokenize(buffer)
+      return self.dephokenize(arr)
 
     def insert(self, buffer, coord, scroll):
       items = self.phokenize(buffer)
