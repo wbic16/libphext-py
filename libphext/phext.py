@@ -8,7 +8,6 @@ from libphext.positionedScroll import PositionedScroll
 
 @dataclass
 class Phext:
-    ready: bool
     location: Coordinate
 
     LIBRARY_BREAK = "\x01"
@@ -30,16 +29,15 @@ class Phext:
 
     def __init__(self):
       location = self.defaultCoordinate()
-      ready = True
 
-    def fetch(self, buffer, coord) -> dict[Coordinate, str]:
+    def fetch(self, buffer:str, coord:Coordinate) -> dict[Coordinate, str]:
       phokens = self.phokenize(buffer)
       for ps in phokens:
         if ps.coord == coord:
           return ps.text
       return ""
     
-    def isPhextBreak(self, byte):
+    def isPhextBreak(self, byte:str):
       return byte == self.LINE_BREAK or \
             byte == self.SCROLL_BREAK or \
             byte == self.SECTION_BREAK or \
@@ -51,7 +49,7 @@ class Phext:
             byte == self.SHELF_BREAK or \
             byte == self.LIBRARY_BREAK
     
-    def phokenize(self, buffer) -> List[PositionedScroll]:
+    def phokenize(self, buffer:str) -> List[PositionedScroll]:
       result = []
       location = self.defaultCoordinate()
       next = self.defaultCoordinate()
@@ -155,11 +153,11 @@ class Phext:
         location = next.coord
       return result
 
-    def normalize(self, buffer) -> str:
+    def normalize(self, buffer:str) -> str:
       arr = self.phokenize(buffer)
       return self.dephokenize(arr)
 
-    def insert(self, buffer, coord, scroll):
+    def update(self, buffer:str, coord:Coordinate, scroll:str, overwrite:bool):
       items = self.phokenize(buffer)
       result = []
       next = PositionedScroll(coord, scroll)
@@ -169,7 +167,8 @@ class Phext:
           result.append(next)
           appended = True
         if (ps.coord == coord) and (appended == False):
-          next.text = ps.text + next.text
+          if overwrite == False:
+            next.text = ps.text + next.text
           result.append(next)
           appended = True
           continue
@@ -180,3 +179,9 @@ class Phext:
 
       serialized = self.dephokenize(result)
       return serialized
+    
+    def insert(self, buffer:str, coord:Coordinate, scroll:str):
+      return self.update(buffer, coord, scroll, False)
+    
+    def replace(self, buffer, coord, scroll):
+      return self.update(buffer, coord, scroll, True)
