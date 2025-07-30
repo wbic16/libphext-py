@@ -101,6 +101,7 @@ def test_more_cowbell():
 def test_coordinate_based_insert():
   phext = Phext()
   doc = "aaa\x01bbb\x17ccc"
+  root = phext.defaultCoordinate()
 
   test1 = phext.phokenize(doc)
   precheck = [
@@ -116,107 +117,104 @@ def test_coordinate_based_insert():
   update1 = phext.insert(doc, coord1, "ddd")
   assert update1 == "aaa\x01bbb\x17ccc\x17ddd"
 
-# todo: finish merging coordinate_based_insert tests
-"""
-// append 'eee' after 'ddd'
-        let coord2 = phext::to_coordinate("2.1.1/1.1.1/1.1.4");
-        let update2 = phext::insert(update1, coord2, "eee");
-        assert_eq!(update2, "aaa\x01bbb\x17ccc\x17ddd\x17eee");
+  # append 'eee' after 'ddd'
+  coord2 = Coordinate.from_string("2.1.1/1.1.1/1.1.4")
+  update2 = phext.insert(update1, coord2, "eee")
+  assert update2 == "aaa\x01bbb\x17ccc\x17ddd\x17eee"
 
-        // append 'fff' after 'eee'
-        let coord3 = phext::to_coordinate("2.1.1/1.1.1/1.2.1");
-        let update3 = phext::insert(update2, coord3, "fff");
-        assert_eq!(update3, "aaa\x01bbb\x17ccc\x17ddd\x17eee\x18fff");
+  # append 'fff' after 'eee'
+  coord3 = Coordinate.from_string("2.1.1/1.1.1/1.2.1")
+  update3 = phext.insert(update2, coord3, "fff")
+  assert update3 == "aaa\x01bbb\x17ccc\x17ddd\x17eee\x18fff"
 
-        // append 'ggg' after 'fff'
-        let coord4 = phext::to_coordinate("2.1.1/1.1.1/1.2.2");
-        let update4 = phext::insert(update3, coord4, "ggg");
-        assert_eq!(update4, "aaa\x01bbb\x17ccc\x17ddd\x17eee\x18fff\x17ggg");
+  # append 'ggg' after 'fff'
+  coord4 = Coordinate.from_string("2.1.1/1.1.1/1.2.2")
+  update4 = phext.insert(update3, coord4, "ggg")
+  assert update4 == "aaa\x01bbb\x17ccc\x17ddd\x17eee\x18fff\x17ggg"
 
-        // append 'hhh' after 'ggg'
-        let coord5 = phext::to_coordinate("2.1.1/1.1.1/2.1.1");
-        let update5 = phext::insert(update4, coord5, "hhh");
-        assert_eq!(update5, "aaa\x01bbb\x17ccc\x17ddd\x17eee\x18fff\x17ggg\x19hhh");
+  # append 'hhh' after 'ggg'
+  coord5 = Coordinate.from_string("2.1.1/1.1.1/2.1.1")
+  update5 = phext.insert(update4, coord5, "hhh")
+  assert update5 == "aaa\x01bbb\x17ccc\x17ddd\x17eee\x18fff\x17ggg\x19hhh"
 
-        // append 'iii' after 'eee'
-        let coord6 = phext::to_coordinate("2.1.1/1.1.1/1.1.5");
-        let update6 = phext::insert(update5, coord6, "iii");
-        assert_eq!(update6, "aaa\x01bbb\x17ccc\x17ddd\x17eee\x17iii\x18fff\x17ggg\x19hhh");
+  # append 'iii' after 'eee'
+  coord6 = Coordinate.from_string("2.1.1/1.1.1/1.1.5")
+  update6 = phext.insert(update5, coord6, "iii")
+  assert update6 == "aaa\x01bbb\x17ccc\x17ddd\x17eee\x17iii\x18fff\x17ggg\x19hhh"
 
-        // extend 1.1.1/1.1.1/1.1.1 with '---AAA'
-        let update7 = phext::insert(update6, root, "---AAA");
-        assert_eq!(update7, "aaa---AAA\x01bbb\x17ccc\x17ddd\x17eee\x17iii\x18fff\x17ggg\x19hhh");
+  # extend 1.1.1/1.1.1/1.1.1 with '---AAA'
+  update7 = phext.insert(update6, root, "---AAA")
+  assert update7 == "aaa---AAA\x01bbb\x17ccc\x17ddd\x17eee\x17iii\x18fff\x17ggg\x19hhh"
 
-        // extend 2.1.1/1.1.1/1.1.1 with '---BBB'
-        let coord8 = phext::to_coordinate("2.1.1/1.1.1/1.1.1");
-        let update8 = phext::insert(update7, coord8, "---BBB");
-        assert_eq!(update8, "aaa---AAA\x01bbb---BBB\x17ccc\x17ddd\x17eee\x17iii\x18fff\x17ggg\x19hhh");
+  # extend 2.1.1/1.1.1/1.1.1 with '---BBB'
+  coord8 = Coordinate.from_string("2.1.1/1.1.1/1.1.1")
+  update8 = phext.insert(update7, coord8, "---BBB")
+  assert update8 == "aaa---AAA\x01bbb---BBB\x17ccc\x17ddd\x17eee\x17iii\x18fff\x17ggg\x19hhh"
 
-        // extend 2.1.1/1.1.1/1.1.2 with '---CCC'
-        let coord9 = phext::to_coordinate("2.1.1/1.1.1/1.1.2");
-        let update9 = phext::insert(update8, coord9, "---CCC");
-        assert_eq!(update9, "aaa---AAA\x01bbb---BBB\x17ccc---CCC\x17ddd\x17eee\x17iii\x18fff\x17ggg\x19hhh");
+  # extend 2.1.1/1.1.1/1.1.2 with '---CCC'
+  coord9 = Coordinate.from_string("2.1.1/1.1.1/1.1.2")
+  update9 = phext.insert(update8, coord9, "---CCC")
+  assert update9 == "aaa---AAA\x01bbb---BBB\x17ccc---CCC\x17ddd\x17eee\x17iii\x18fff\x17ggg\x19hhh"
 
-        // extend 2.1.1/1.1.1/1.1.3 with '---DDD'
-        let coord10 = phext::to_coordinate("2.1.1/1.1.1/1.1.3");
-        let update10 = phext::insert(update9, coord10, "---DDD");
-        assert_eq!(update10, "aaa---AAA\x01bbb---BBB\x17ccc---CCC\x17ddd---DDD\x17eee\x17iii\x18fff\x17ggg\x19hhh");
+  # extend 2.1.1/1.1.1/1.1.3 with '---DDD'
+  coord10 = Coordinate.from_string("2.1.1/1.1.1/1.1.3")
+  update10 = phext.insert(update9, coord10, "---DDD")
+  assert update10 == "aaa---AAA\x01bbb---BBB\x17ccc---CCC\x17ddd---DDD\x17eee\x17iii\x18fff\x17ggg\x19hhh"
 
-        // extend 2.1.1/1.1.1/1.1.4 with '---EEE'
-        let coord11 = phext::to_coordinate("2.1.1/1.1.1/1.1.4");
-        let update11 = phext::insert(update10, coord11, "---EEE");
-        assert_eq!(update11, "aaa---AAA\x01bbb---BBB\x17ccc---CCC\x17ddd---DDD\x17eee---EEE\x17iii\x18fff\x17ggg\x19hhh");
+  # extend 2.1.1/1.1.1/1.1.4 with '---EEE'
+  coord11 = Coordinate.from_string("2.1.1/1.1.1/1.1.4")
+  update11 = phext.insert(update10, coord11, "---EEE")
+  assert update11 == "aaa---AAA\x01bbb---BBB\x17ccc---CCC\x17ddd---DDD\x17eee---EEE\x17iii\x18fff\x17ggg\x19hhh"
 
-        // extend 2.1.1/1.1.1/1.1.5 with '---III'
-        let coord12 = phext::to_coordinate("2.1.1/1.1.1/1.1.5");
-        let update12 = phext::insert(update11, coord12, "---III");
-        assert_eq!(update12, "aaa---AAA\x01bbb---BBB\x17ccc---CCC\x17ddd---DDD\x17eee---EEE\x17iii---III\x18fff\x17ggg\x19hhh");
+  # extend 2.1.1/1.1.1/1.1.5 with '---III'
+  coord12 = Coordinate.from_string("2.1.1/1.1.1/1.1.5")
+  update12 = phext.insert(update11, coord12, "---III")
+  assert update12 == "aaa---AAA\x01bbb---BBB\x17ccc---CCC\x17ddd---DDD\x17eee---EEE\x17iii---III\x18fff\x17ggg\x19hhh"
 
-        // extend 2.1.1/1.1.1/1.2.1 with '---FFF'
-        let coord13 = phext::to_coordinate("2.1.1/1.1.1/1.2.1");
-        let update13 = phext::insert(update12, coord13, "---FFF");
-        assert_eq!(update13, "aaa---AAA\x01bbb---BBB\x17ccc---CCC\x17ddd---DDD\x17eee---EEE\x17iii---III\x18fff---FFF\x17ggg\x19hhh");
+  # extend 2.1.1/1.1.1/1.2.1 with '---FFF'
+  coord13 = Coordinate.from_string("2.1.1/1.1.1/1.2.1")
+  update13 = phext.insert(update12, coord13, "---FFF")
+  assert update13 == "aaa---AAA\x01bbb---BBB\x17ccc---CCC\x17ddd---DDD\x17eee---EEE\x17iii---III\x18fff---FFF\x17ggg\x19hhh"
 
-        // extend 2.1.1/1.1.1/1.2.2 with '---GGG'
-        let coord14 = phext::to_coordinate("2.1.1/1.1.1/1.2.2");
-        let update14 = phext::insert(update13, coord14, "---GGG");
-        assert_eq!(update14, "aaa---AAA\x01bbb---BBB\x17ccc---CCC\x17ddd---DDD\x17eee---EEE\x17iii---III\x18fff---FFF\x17ggg---GGG\x19hhh");
+  # extend 2.1.1/1.1.1/1.2.2 with '---GGG'
+  coord14 = Coordinate.from_string("2.1.1/1.1.1/1.2.2")
+  update14 = phext.insert(update13, coord14, "---GGG")
+  assert update14 == "aaa---AAA\x01bbb---BBB\x17ccc---CCC\x17ddd---DDD\x17eee---EEE\x17iii---III\x18fff---FFF\x17ggg---GGG\x19hhh"
 
-        // extend 2.1.1/1.1.1/2.1.1 with '---HHH'
-        let coord15 = phext::to_coordinate("2.1.1/1.1.1/2.1.1");
-        let update15 = phext::insert(update14, coord15, "---HHH");
-        assert_eq!(update15, "aaa---AAA\x01bbb---BBB\x17ccc---CCC\x17ddd---DDD\x17eee---EEE\x17iii---III\x18fff---FFF\x17ggg---GGG\x19hhh---HHH");
+  # extend 2.1.1/1.1.1/2.1.1 with '---HHH'
+  coord15 = Coordinate.from_string("2.1.1/1.1.1/2.1.1")
+  update15 = phext.insert(update14, coord15, "---HHH")
+  assert update15 == "aaa---AAA\x01bbb---BBB\x17ccc---CCC\x17ddd---DDD\x17eee---EEE\x17iii---III\x18fff---FFF\x17ggg---GGG\x19hhh---HHH"
 
-        // insert 'jjj' at 2.1.1/1.1.2/1.1.1
-        let coord16 = phext::to_coordinate("2.1.1/1.1.2/1.1.1");
-        let update16 = phext::insert(update15, coord16, "jjj");
-        assert_eq!(update16, "aaa---AAA\x01bbb---BBB\x17ccc---CCC\x17ddd---DDD\x17eee---EEE\x17iii---III\x18fff---FFF\x17ggg---GGG\x19hhh---HHH\x1Ajjj");
+  # insert 'jjj' at 2.1.1/1.1.2/1.1.1
+  coord16 = Coordinate.from_string("2.1.1/1.1.2/1.1.1")
+  update16 = phext.insert(update15, coord16, "jjj")
+  assert update16 == "aaa---AAA\x01bbb---BBB\x17ccc---CCC\x17ddd---DDD\x17eee---EEE\x17iii---III\x18fff---FFF\x17ggg---GGG\x19hhh---HHH\x1Ajjj"
 
-        // insert 'kkk' at 2.1.1/1.2.1/1.1.1
-        let coord17 = phext::to_coordinate("2.1.1/1.2.1/1.1.1");
-        let update17 = phext::insert(update16, coord17, "kkk");
-        assert_eq!(update17, "aaa---AAA\x01bbb---BBB\x17ccc---CCC\x17ddd---DDD\x17eee---EEE\x17iii---III\x18fff---FFF\x17ggg---GGG\x19hhh---HHH\x1Ajjj\x1Ckkk");
+  # insert 'kkk' at 2.1.1/1.2.1/1.1.1
+  coord17 = Coordinate.from_string("2.1.1/1.2.1/1.1.1")
+  update17 = phext.insert(update16, coord17, "kkk")
+  assert update17 == "aaa---AAA\x01bbb---BBB\x17ccc---CCC\x17ddd---DDD\x17eee---EEE\x17iii---III\x18fff---FFF\x17ggg---GGG\x19hhh---HHH\x1Ajjj\x1Ckkk"
 
-        // insert 'lll' at 2.1.1/2.1.1/1.1.1
-        let coord18 = phext::to_coordinate("2.1.1/2.1.1/1.1.1");
-        let update18 = phext::insert(update17, coord18, "lll");
-        assert_eq!(update18, "aaa---AAA\x01bbb---BBB\x17ccc---CCC\x17ddd---DDD\x17eee---EEE\x17iii---III\x18fff---FFF\x17ggg---GGG\x19hhh---HHH\x1Ajjj\x1Ckkk\x1Dlll");
+  # insert 'lll' at 2.1.1/2.1.1/1.1.1
+  coord18 = Coordinate.from_string("2.1.1/2.1.1/1.1.1")
+  update18 = phext.insert(update17, coord18, "lll")
+  assert update18 == "aaa---AAA\x01bbb---BBB\x17ccc---CCC\x17ddd---DDD\x17eee---EEE\x17iii---III\x18fff---FFF\x17ggg---GGG\x19hhh---HHH\x1Ajjj\x1Ckkk\x1Dlll"
 
-        // insert 'mmm' at 2.1.2/1.1.1/1.1.1
-        let coord19 = phext::to_coordinate("2.1.2/1.1.1/1.1.1");
-        let update19 = phext::insert(update18, coord19, "mmm");
-        assert_eq!(update19, "aaa---AAA\x01bbb---BBB\x17ccc---CCC\x17ddd---DDD\x17eee---EEE\x17iii---III\x18fff---FFF\x17ggg---GGG\x19hhh---HHH\x1Ajjj\x1Ckkk\x1Dlll\x1Emmm");
+  # insert 'mmm' at 2.1.2/1.1.1/1.1.1
+  coord19 = Coordinate.from_string("2.1.2/1.1.1/1.1.1")
+  update19 = phext.insert(update18, coord19, "mmm")
+  assert update19 == "aaa---AAA\x01bbb---BBB\x17ccc---CCC\x17ddd---DDD\x17eee---EEE\x17iii---III\x18fff---FFF\x17ggg---GGG\x19hhh---HHH\x1Ajjj\x1Ckkk\x1Dlll\x1Emmm"
 
-        // insert 'nnn' at 2.2.1/1.1.1/1.1.1
-        let coord20 = phext::to_coordinate("2.2.1/1.1.1/1.1.1");
-        let update20 = phext::insert(update19, coord20, "nnn");
-        assert_eq!(update20, "aaa---AAA\x01bbb---BBB\x17ccc---CCC\x17ddd---DDD\x17eee---EEE\x17iii---III\x18fff---FFF\x17ggg---GGG\x19hhh---HHH\x1Ajjj\x1Ckkk\x1Dlll\x1Emmm\x1Fnnn");
+  # insert 'nnn' at 2.2.1/1.1.1/1.1.1
+  coord20 = Coordinate.from_string("2.2.1/1.1.1/1.1.1")
+  update20 = phext.insert(update19, coord20, "nnn")
+  assert update20 == "aaa---AAA\x01bbb---BBB\x17ccc---CCC\x17ddd---DDD\x17eee---EEE\x17iii---III\x18fff---FFF\x17ggg---GGG\x19hhh---HHH\x1Ajjj\x1Ckkk\x1Dlll\x1Emmm\x1Fnnn"
 
-        // insert 'ooo' at 3.1.1/1.1.1/1.1.1
-        let coord21 = phext::to_coordinate("3.1.1/1.1.1/1.1.1");
-        let update21 = phext::insert(update20, coord21, "ooo");
-        assert_eq!(update21, "aaa---AAA\x01bbb---BBB\x17ccc---CCC\x17ddd---DDD\x17eee---EEE\x17iii---III\x18fff---FFF\x17ggg---GGG\x19hhh---HHH\x1Ajjj\x1Ckkk\x1Dlll\x1Emmm\x1Fnnn\x01ooo");
-"""
+  # insert 'ooo' at 3.1.1/1.1.1/1.1.1
+  coord21 = Coordinate.from_string("3.1.1/1.1.1/1.1.1")
+  update21 = phext.insert(update20, coord21, "ooo")
+  assert update21 == "aaa---AAA\x01bbb---BBB\x17ccc---CCC\x17ddd---DDD\x17eee---EEE\x17iii---III\x18fff---FFF\x17ggg---GGG\x19hhh---HHH\x1Ajjj\x1Ckkk\x1Dlll\x1Emmm\x1Fnnn\x01ooo"
 
 def test_coordinate_based_replace():
   assert False
