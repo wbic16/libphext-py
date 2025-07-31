@@ -392,3 +392,17 @@ class Phext:
         else:
           result += char
       return result
+    
+    def create_summary(self, buffer:str) -> str:
+      limit = 32
+      max = len(buffer)
+      if max < 32:
+        limit = max
+      summary = ""
+      for char in buffer:
+        if self.isPhextBreak(char):
+          break
+        summary += char
+      if len(summary) < len(buffer):
+        summary += "..."
+      return summary

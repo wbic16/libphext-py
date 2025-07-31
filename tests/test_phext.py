@@ -556,7 +556,14 @@ def test_replace_create():
   assert message == "A\x17B\x17C\x18D\x19E\x1AF\x1CG\x1DH\x1EI\x1FJ\x01K\x01L"
 
 def test_summary():
-  assert False
+  phext = Phext()
+  doc1 = "A short phext\nSecond line\x17second scroll.............................";
+  update1 = phext.create_summary(doc1);
+  assert update1 == "A short phext..."
+
+  doc2 = "very terse";
+  update2 = phext.create_summary(doc2);
+  assert update2 == "very terse"
 
 def test_navmap():
   assert False
