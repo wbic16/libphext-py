@@ -406,3 +406,17 @@ class Phext:
       if len(summary) < len(buffer):
         summary += "..."
       return summary
+    
+    def navmap(self, urlbase:str, buffer:str) -> str:
+      stack = self.phokenize(buffer)
+      result = ""
+      max = len(stack)
+      if max > 0:
+        result += "<ul>\n"
+      for ps in stack:
+        urlcoord = ps.coord.urlencoded()
+        summary = self.create_summary(ps.text)
+        result += f"<li><a href=\"{urlbase}{urlcoord}\">{ps.coord} {summary}</a></li>\n"
+      if max > 0:
+        result += "</ul>\n"
+      return result;
