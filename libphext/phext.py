@@ -38,8 +38,8 @@ class Phext:
       location = self.defaultCoordinate()
 
     def fetch(self, buffer:str, coord:Coordinate) -> dict[Coordinate, str]:
-      phokens = self.phokenize(buffer)
-      for ps in phokens:
+      stack = self.phokenize(buffer)
+      for ps in stack:
         if ps.coord == coord:
           return ps.text
       return ""
@@ -152,10 +152,10 @@ class Phext:
       result = PositionedScroll(location, output)
       return result
 
-    def dephokenize(self, phokens: list[PositionedScroll]) -> str:
+    def dephokenize(self, stack: list[PositionedScroll]) -> str:
       result = ""
       location = self.defaultCoordinate()
-      for ps in phokens:
+      for ps in stack:
         next = self.append_scroll(ps, location)
         result += next.text
         location = next.coord
@@ -250,7 +250,7 @@ class Phext:
         if stage < 2 and walker > target:
           if stage == 0:
             start = subspace_index - 1
-          end = subspace_index - 1;
+          end = subspace_index - 1
           stage = 2    
 
         if self.isPhextBreak(next):
@@ -419,4 +419,12 @@ class Phext:
         result += f"<li><a href=\"{urlbase}{urlcoord}\">{ps.coord} {summary}</a></li>\n"
       if max > 0:
         result += "</ul>\n"
-      return result;
+      return result
+    
+    def textmap(self, buffer:str) -> str:
+      stack = self.phokenize(buffer)
+      result = ""
+      for ps in stack:
+        summary = self.create_summary(ps.text)
+        result += f"* {ps.coord}: {summary}\n"
+      return result
