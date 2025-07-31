@@ -525,7 +525,13 @@ def test_expand():
   assert update10 == "nothing but line breaks\x01to test expansion to scrolls\x01line 3"
 
 def test_contract():
-  assert False
+  phext = Phext()
+  doc1 = "A more complex example than expand\x01----\x1F++++\x1E____\x1Doooo\x1C====\x1Azzzz\x19gggg\x18....\x17qqqq"
+  update1 = phext.contract(doc1)
+  assert update1 == "A more complex example than expand\x1F----\x1E++++\x1D____\x1Coooo\x1A====\x19zzzz\x18gggg\x17....\x0Aqqqq"
+
+  update2 = phext.contract(update1)
+  assert update2 == "A more complex example than expand\x1E----\x1D++++\x1C____\x1Aoooo\x19====\x18zzzz\x17gggg\x0A....\x0Aqqqq"
 
 def test_fs_read_write():
   assert False

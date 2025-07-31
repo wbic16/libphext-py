@@ -367,3 +367,28 @@ class Phext:
         else:
           result += char
       return result
+    
+    def contract(self, buffer:str) -> str:
+      result = ""
+      for char in buffer:
+        if char == self.LIBRARY_BREAK:
+          result += self.SHELF_BREAK
+        elif char == self.SHELF_BREAK:
+          result += self.SERIES_BREAK
+        elif char == self.SERIES_BREAK:
+          result += self.COLLECTION_BREAK
+        elif char == self.COLLECTION_BREAK:
+          result += self.VOLUME_BREAK
+        elif char == self.VOLUME_BREAK:
+          result += self.BOOK_BREAK
+        elif char == self.BOOK_BREAK:
+          result += self.CHAPTER_BREAK
+        elif char == self.CHAPTER_BREAK:
+          result += self.SECTION_BREAK
+        elif char == self.SECTION_BREAK:
+          result += self.SCROLL_BREAK
+        elif char == self.SCROLL_BREAK:
+          result += self.LINE_BREAK
+        else:
+          result += char
+      return result
