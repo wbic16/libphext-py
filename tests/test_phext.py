@@ -492,7 +492,37 @@ def test_normalize():
   assert update1 == "\x17Scroll two"
 
 def test_expand():
-  assert False
+  phext = Phext()
+  doc1 = "nothing but line breaks\x0Ato test expansion to scrolls\x0Aline 3"
+  update1 = phext.expand(doc1)
+  assert update1 == "nothing but line breaks\x17to test expansion to scrolls\x17line 3"
+
+  update2 = phext.expand(update1)
+  assert update2 == "nothing but line breaks\x18to test expansion to scrolls\x18line 3"
+
+  update3 = phext.expand(update2)
+  assert update3 == "nothing but line breaks\x19to test expansion to scrolls\x19line 3"
+
+  update4 = phext.expand(update3)
+  assert update4 == "nothing but line breaks\x1Ato test expansion to scrolls\x1Aline 3"
+
+  update5 = phext.expand(update4)
+  assert update5 == "nothing but line breaks\x1Cto test expansion to scrolls\x1Cline 3"
+
+  update6 = phext.expand(update5)
+  assert update6 == "nothing but line breaks\x1Dto test expansion to scrolls\x1Dline 3"
+
+  update7 = phext.expand(update6)
+  assert update7 == "nothing but line breaks\x1Eto test expansion to scrolls\x1Eline 3"
+
+  update8 = phext.expand(update7)
+  assert update8 == "nothing but line breaks\x1Fto test expansion to scrolls\x1Fline 3"
+
+  update9 = phext.expand(update8)
+  assert update9 == "nothing but line breaks\x01to test expansion to scrolls\x01line 3"
+
+  update10 = phext.expand(update9)
+  assert update10 == "nothing but line breaks\x01to test expansion to scrolls\x01line 3"
 
 def test_contract():
   assert False
