@@ -584,7 +584,56 @@ def test_phext_index():
   assert False
 
 def test_scroll_manifest():
-  assert False
+  phext = Phext()
+  example = "first scroll\x17second scroll\x18second section\x19second chapter\x1Abook 2\x1Cvolume 2\x1Dcollection 2\x1Eseries 2\x1Fshelf 2\x01library 2";
+  result = phext.manifest(example);
+
+  scroll0 = "00000000000000000000"
+  hash0 = phext.checksum(scroll0)
+  assert hash0, "7e79edd92a62a048e1cd24ffab542e34"
+
+  scroll1 = "first scroll"
+  hash1 = phext.checksum(scroll1)
+  assert hash1, "ba9d944e4967e29d48bae69ac2999699"
+
+  scroll2 = "second scroll"
+  hash2 = phext.checksum(scroll2)
+  assert hash2, "2fe1b2040314ac66f132dd3b4926157c"
+
+  scroll3 = "second section"
+  hash3 = phext.checksum(scroll3)
+  assert hash3, "fddb6916753b6f4e0b5281469134778b"
+
+  scroll4 = "second chapter"
+  hash4 = phext.checksum(scroll4)
+  assert hash4, "16ab5b1a0a997db95ec215a3bf2c57b3"
+
+  scroll5 = "book 2"
+  hash5 = phext.checksum(scroll5)
+  assert hash5, "0f20f79bf36f63e8fba25cc6765e2d0d"
+
+  scroll6 = "volume 2"
+  hash6 = phext.checksum(scroll6)
+  assert hash6, "7ead0c6fef43adb446fe3bda6fb0adc7"
+
+  scroll7 = "collection 2"
+  hash7 = phext.checksum(scroll7)
+  assert hash7, "78c12298931c6edede92962137a9280a"
+
+  scroll8 = "series 2"
+  hash8 = phext.checksum(scroll8)
+  assert hash8, "0f35100c84df601a490b7b63d7e8c0a8"
+
+  scroll9 = "shelf 2"
+  hash9 = phext.checksum(scroll9)
+  assert hash9, "3bbf7e67cb33d613a906bc5a3cbefd95"
+
+  scroll10 = "library 2"
+  hash10 = phext.checksum(scroll10)
+  assert hash10, "2e7fdd387196a8a2706ccb9ad6792bc3"
+
+  expected = f"{hash1}\x17{hash2}\x18{hash3}\x19{hash4}\x1A{hash5}\x1C{hash6}\x1D{hash7}\x1E{hash8}\x1F{hash9}\x01{hash10}"
+  assert result, expected
 
 def test_phext_soundex_v1():
   assert False

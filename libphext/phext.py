@@ -1,4 +1,5 @@
 import copy
+import xxhash
 
 from dataclasses import dataclass
 from typing import List
@@ -427,4 +428,15 @@ class Phext:
       for ps in stack:
         summary = self.create_summary(ps.text)
         result += f"* {ps.coord}: {summary}\n"
+      return result
+    
+    def checksum(self, buffer:str) -> str:
+      hash = xxhash.xxh3_128(buffer).hexdigest()
+      return hash
+    
+    def manifest(self, buffer:str) -> str:
+      stack = self.phokenize(buffer)
+      for ps in stack:
+        ps.text = self.checksum(ps.text)
+      result = self.dephokenize(stack)
       return result
