@@ -534,10 +534,26 @@ def test_contract():
   assert update2 == "A more complex example than expand\x1E----\x1D++++\x1C____\x1Aoooo\x19====\x18zzzz\x17gggg\x0A....\x0Aqqqq"
 
 def test_fs_read_write():
-  assert False
+  phext = Phext()
+
+  initial = "a simple phext doc with three scrolls\x17we just want to verify\x17that all of our breaks are making it through python's fs layer.\x18section 2\x19chapter 2\x1Abook 2\x1Cvolume 2\x1Dcollection 2\x1Eseries 2\x1Fshelf 2\x01library 2"
+  filename = "unit-test.phext"
+  with open(filename, "w", encoding="utf-8") as file:
+    file.write(initial)
+  with open(filename, "r", encoding="utf-8") as file:
+    verify = file.read()
+
+  assert verify == initial
+  coordinate = Coordinate.from_string("2.1.1/1.1.1/1.1.1")
+  message = phext.replace(verify, coordinate, "still lib 2")
+  assert message == "a simple phext doc with three scrolls\x17we just want to verify\x17that all of our breaks are making it through python's fs layer.\x18section 2\x19chapter 2\x1Abook 2\x1Cvolume 2\x1Dcollection 2\x1Eseries 2\x1Fshelf 2\x01still lib 2"
 
 def test_replace_create():
-  assert False
+  phext = Phext()
+  initial = "A\x17B\x17C\x18D\x19E\x1AF\x1CG\x1DH\x1EI\x1FJ\x01K"
+  coordinate = Coordinate.from_string("3.1.1/1.1.1/1.1.1")
+  message = phext.replace(initial, coordinate, "L")
+  assert message == "A\x17B\x17C\x18D\x19E\x1AF\x1CG\x1DH\x1EI\x1FJ\x01K\x01L"
 
 def test_summary():
   assert False
