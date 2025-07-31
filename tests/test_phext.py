@@ -434,7 +434,49 @@ def test_last_empty_scroll():
   assert test1 == "world"
 
 def test_merge():
-  assert False
+  phext = Phext()
+  doc_1a = "3A\x17B2"
+  doc_1b = "4C\x17D1"
+  update_1 = phext.merge(doc_1a, doc_1b)
+  assert update_1 == "3A4C\x17B2D1"
+
+  doc_2a = "Hello \x17I've come to talk"
+  doc_2b = "Darkness, my old friend.\x17 with you again."
+  update_2 = phext.merge(doc_2a, doc_2b)
+  assert update_2 == "Hello Darkness, my old friend.\x17I've come to talk with you again."
+
+  doc_3a = "One\x17Two\x18Three\x19Four"
+  doc_3b = "1\x172\x183\x194"
+  update_3 = phext.merge(doc_3a, doc_3b)
+  assert update_3 == "One1\x17Two2\x18Three3\x19Four4"
+
+  doc_4a = "\x1A\x1C\x1D\x1E\x1F\x01stuff here"
+  doc_4b = "\x1A\x1C\x1D\x1Eprecursor here\x1F\x01and more"
+  update_4 = phext.merge(doc_4a, doc_4b)
+  assert update_4 == "\x1Eprecursor here\x01stuff hereand more"
+
+  doc_5a = "\x01\x01 Library at 3.1.1/1.1.1/1.1.1 \x1F Shelf at 3.2.1/1.1.1/1.1.1"
+  doc_5b = "\x01\x01\x01 Library 4.1.1/1.1.1/1.1.1 \x1E Series at 4.1.2/1.1.1/1.1.1"
+  update_5 = phext.merge(doc_5a, doc_5b)
+  sample = phext.phokenize(update_5)
+  for item in sample:
+    print(str(item.coord) + ": " + item.text)
+  assert update_5 == "\x01\x01 Library at 3.1.1/1.1.1/1.1.1 \x1F Shelf at 3.2.1/1.1.1/1.1.1\x01 Library 4.1.1/1.1.1/1.1.1 \x1E Series at 4.1.2/1.1.1/1.1.1"
+
+  doc_6a = "\x1D Collection at 1.1.1/2.1.1/1.1.1\x1C Volume at 1.1.1/2.2.1/1.1.1"
+  doc_6b = "\x1D\x1D Collection at 1.1.1/3.1.1/1.1.1\x1C Volume at 1.1.1/3.2.1/1.1.1"
+  update_6 = phext.merge(doc_6a, doc_6b)
+  assert update_6 == "\x1D Collection at 1.1.1/2.1.1/1.1.1\x1C Volume at 1.1.1/2.2.1/1.1.1\x1D Collection at 1.1.1/3.1.1/1.1.1\x1C Volume at 1.1.1/3.2.1/1.1.1"
+
+  doc_7a = "\x1ABook #2 Part 1\x1ABook #3 Part 1"
+  doc_7b = "\x1A + Part II\x1A + Part Deux"
+  update_7 = phext.merge(doc_7a, doc_7b)
+  assert update_7 == "\x1ABook #2 Part 1 + Part II\x1ABook #3 Part 1 + Part Deux"
+
+  doc8a = "AA\x01BB\x01CC"
+  doc8b = "__\x01__\x01__"
+  update8 = phext.merge(doc8a, doc8b)
+  assert update8 == "AA__\x01BB__\x01CC__"
 
 def test_subtract():
   assert False

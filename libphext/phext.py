@@ -289,3 +289,35 @@ class Phext:
 
       result = SubspaceBeacon(start, end, best)
       return result
+    
+    def merge(self, left: str, right:str) -> str:
+      tl = self.phokenize(left)
+      tr = self.phokenize(right)
+      tli = 0
+      tri = 0
+      maxtl = len(tl)
+      maxtr = len(tr)
+      result = ""
+      coord = self.defaultCoordinate()
+
+      while True:
+        have_left = tli < maxtl
+        have_right = tri < maxtr
+        pick_left = have_left and (have_right == False or tl[tli].coord <= tr[tri].coord)
+        pick_right = have_right and (have_left == False or tr[tri].coord <= tl[tli].coord)
+
+        if pick_left:
+          next = self.append_scroll(tl[tli], coord)
+          result += next.text
+          coord = next.coord
+          tli += 1
+        if pick_right:
+          next = self.append_scroll(tr[tri], coord)
+          result += next.text
+          coord = next.coord
+          tri += 1
+
+        if pick_left == False and pick_right == False:
+          break
+
+      return result
