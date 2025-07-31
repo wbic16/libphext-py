@@ -486,7 +486,10 @@ def test_subtract():
   assert update1 == "\x17Scroll two."
 
 def test_normalize():
-  assert False
+  phext = Phext()
+  doc1 = "\x17Scroll two\x18\x18\x18\x18"
+  update1 = phext.normalize(doc1)
+  assert update1 == "\x17Scroll two"
 
 def test_expand():
   assert False
