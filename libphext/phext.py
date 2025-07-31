@@ -321,3 +321,24 @@ class Phext:
           break
 
       return result
+    
+    def subtract(self, left:str, right:str) -> str:
+      pl = self.phokenize(left)
+      pr = self.phokenize(right)
+      result = ""
+      pri = 0
+      max = len(pr)
+      coord = self.defaultCoordinate()
+      for item in pl:
+        do_append = pri == max
+        if pri < max:
+          compare = pr[pri]
+          if item.coord < compare.coord:
+            do_append = True
+          elif item.coord == compare.coord:
+            pri += 1
+        if do_append:
+          next = self.append_scroll(item, coord)
+          result += next.text
+          coord = next.coord
+      return result

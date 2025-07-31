@@ -479,7 +479,11 @@ def test_merge():
   assert update8 == "AA__\x01BB__\x01CC__"
 
 def test_subtract():
-  assert False
+  phext = Phext()
+  doc1a = "Here's scroll one.\x17Scroll two."
+  doc1b = "Just content at the first scroll"
+  update1 = phext.subtract(doc1a, doc1b)
+  assert update1 == "\x17Scroll two."
 
 def test_normalize():
   assert False
