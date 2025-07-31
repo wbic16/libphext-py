@@ -421,7 +421,17 @@ def test_next_scroll():
   assert temp[1].text == "B2"
 
 def test_last_empty_scroll():
-  assert False
+  # a regression discovered from SQ - see https://github.com/wbic16/SQ
+  phext = Phext()
+  doc1 = "hello\x17world\x17"
+  target1 = Coordinate.from_string("1.1.1/1.1.1/1.1.2")
+  parts1 = phext.get_subspace_coordinates(doc1, target1)
+  assert parts1.start == 6
+  assert parts1.end == 11
+  assert parts1.best == target1
+        
+  test1 = phext.fetch(doc1, target1)
+  assert test1 == "world"
 
 def test_merge():
   assert False

@@ -8,6 +8,12 @@ from libphext.positionedScroll import PositionedScroll
 from libphext.range import Range
 
 @dataclass
+class SubspaceBeacon:
+  start: int
+  end: int
+  best: Coordinate
+
+@dataclass
 class Phext:
     location: Coordinate
 
@@ -185,14 +191,14 @@ class Phext:
     def insert(self, buffer:str, coord:Coordinate, scroll:str) -> str:
       return self.update(buffer, coord, scroll, False)
     
-    def replace(self, buffer, coord, scroll) -> str:
+    def replace(self, buffer:str, coord:Coordinate, scroll:str) -> str:
       return self.update(buffer, coord, scroll, True)
     
-    def remove(self, buffer, coord) -> str:
+    def remove(self, buffer:str, coord:Coordinate) -> str:
       intermediate = self.update(buffer, coord, "", True)
       return self.normalize(intermediate)
     
-    def range_replace(self, buffer, range:Range, text) -> str:
+    def range_replace(self, buffer:str, range:Range, text:str) -> str:
       stack = self.phokenize(buffer)
       result = []
       appended = False      
@@ -208,7 +214,7 @@ class Phext:
           result.append(ps)
       return self.dephokenize(result)
     
-    def next_scroll(self, buffer, coord:Coordinate) -> List[PositionedScroll]:
+    def next_scroll(self, buffer:str, coord:Coordinate) -> List[PositionedScroll]:
       stack = self.phokenize(buffer)
       found = False
       result = []
@@ -219,4 +225,67 @@ class Phext:
         if ps.coord >= coord:
           result.append(ps)
           found = True
+      return result
+    
+    def get_subspace_coordinates(self, buffer:str, target:Coordinate):
+      walker = self.defaultCoordinate()
+      best = self.defaultCoordinate()
+      subspace_index = 0
+      start = 0
+      end = 0
+      stage = 0
+      max = len(buffer)
+
+      while subspace_index < max:
+        next = buffer[subspace_index]
+        compare = next
+
+        if stage == 0:
+          if walker == target:
+            stage = 1
+            start = subspace_index
+            best = copy.deepcopy(walker)
+          if walker < target:
+            best = copy.deepcopy(walker)
+        if stage < 2 and walker > target:
+          if stage == 0:
+            start = subspace_index - 1
+          end = subspace_index - 1;
+          stage = 2    
+
+        if self.isPhextBreak(next):
+          if compare == self.SCROLL_BREAK:
+            walker.scrollBreak()
+          if compare == self.SECTION_BREAK:
+            walker.sectionBreak()
+          if compare == self.CHAPTER_BREAK:
+            walker.chapterBreak()
+          if compare == self.BOOK_BREAK:
+            walker.bookBreak()
+          if compare == self.VOLUME_BREAK:
+            walker.volumeBreak()
+          if compare == self.COLLECTION_BREAK:
+            walker.collectionBreak()
+          if compare == self.SERIES_BREAK:
+            walker.seriesBreak()
+          if compare == self.SHELF_BREAK:
+            walker.shelfBreak()
+          if compare == self.LIBRARY_BREAK:
+            walker.libraryBreak()
+        
+        if stage < 2 and walker > target:
+          end = subspace_index
+          stage = 2
+        
+        subspace_index += 1
+
+      if stage == 1 and walker == target:
+        end = max
+        stage = 2
+
+      if stage == 0:
+        start = max
+        end = max
+
+      result = SubspaceBeacon(start, end, best)
       return result
