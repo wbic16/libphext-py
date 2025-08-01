@@ -440,3 +440,35 @@ class Phext:
         ps.text = self.checksum(ps.text)
       result = self.dephokenize(stack)
       return result
+    
+    def soundex_v1(self, buffer:str) -> str:
+      stack = self.phokenize(buffer)
+  
+      for ps in stack:
+        ps.text = self.soundex_internal(ps.text)
+
+      return self.dephokenize(stack)
+    
+    def soundex_internal(self, buffer:str) -> str:
+      letter1 = "bpfv"
+      letter2 = "cskgjqxz"
+      letter3 = "dt"
+      letter4 = "l"
+      letter5 = "mn"
+      letter6 = "r"
+      
+      value = 1 # 1-100
+      for byte in buffer:
+        if byte in letter1:
+          value += 1
+        if byte in letter2:
+          value += 2
+        if byte in letter3:
+          value += 3
+        if byte in letter4:
+          value += 4
+        if byte in letter5:
+          value += 5
+        if byte in letter6:
+          value += 6
+      return str(value % 99)

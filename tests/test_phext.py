@@ -636,7 +636,10 @@ def test_scroll_manifest():
   assert result, expected
 
 def test_phext_soundex_v1():
-  assert False
+  phext = Phext()
+  sample = "it was the best of scrolls\x17it was the worst of scrolls\x17aaa\x17bbb\x17ccc\x17ddd\x17eee\x17fff\x17ggg\x17hhh\x17iii\x17jjj\x17kkk\x17lll\x18mmm\x18nnn\x18ooo\x18ppp\x19qqq\x19rrr\x19sss\x19ttt\x1auuu\x1avvv\x1awww\x1axxx\x1ayyy\x1azzz"
+  result = phext.soundex_v1(sample)
+  assert result == "36\x1741\x171\x174\x177\x1710\x171\x174\x177\x171\x171\x177\x177\x1713\x1816\x1816\x181\x184\x197\x1919\x197\x1910\x1a1\x1a4\x1a1\x1a7\x1a1\x1a7"
 
 def test_insert_performance_2k_scrolls():
   assert False
