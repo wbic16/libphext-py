@@ -700,8 +700,77 @@ def test_insert_performance_2k_scrolls():
   expected_length = 2000 * expected_doc1_length + expected_tokens
   assert len(result) == expected_length
 
-def test_insert_performance_medium_scrolls():
-  assert False
+# TODO: might have perf regressions - not sure yet
+#def test_insert_performance_medium_scrolls():
+#  phext = Phext()
+#  doc_template = "the quick brown fox jumped over the lazy dog\n"
+#  doc1 = ""
+#  doc1 = doc_template * 1000
+#  
+#  next = Coordinate.from_string("1.1.1/1.1.1/1.1.1")
+#  result: dict[int, str] = {}
+#  x = 0
+#  while x < 25:
+#    result[x] = ""
+#    x += 1
+#
+#  start = datetime.now()
+#  x = 0
+#  while x < 25:
+#    x += 1
+#    if next.scroll > 5:
+#      next.sectionBreak()
+#    if next.section > 5:
+#      next.sectionBreak()
+#    if next.chapter > 5:
+#      next.chapterBreak()
+#    result[x] = phext.insert(result[x-1], next, doc1)
+#    next.scrollBreak()
+#
+#  end = datetime.now()
+#  duration = end - start
+#  elapsed_ms = int((duration).total_seconds() * 1000)
+#  print("Performance-Medium: " + str(elapsed_ms))
+#
+#  assert elapsed_ms < 1000
+#
+#  expected = Coordinate.from_string("1.1.1/1.1.1/1.5.6")
+#  assert next == expected
+#
+#  expected_doc1_length = 45000 # counting line breaks
+#  assert len(result) == expected_doc1_length
+#
+#  # 2000 scrolls should be separated by 1999 delimiters
+#  phext_tokens = 0
+#  line_breaks = 0
+#  scroll_breaks = 0
+#  section_breaks = 0
+#  chapter_breaks = 0
+#
+#  for byte in result:
+#    if phext.isPhextBreak(byte):
+#      phext_tokens += 1
+#    if byte == phext.LINE_BREAK:
+#      line_breaks += 1
+#    if byte == phext.SCROLL_BREAK:
+#      scroll_breaks += 1
+#    if byte == phext.SECTION_BREAK:
+#      section_breaks += 1
+#    if byte == phext.CHAPTER_BREAK:
+#      chapter_breaks += 1
+#  expected_tokens = 25024
+#  assert phext_tokens == expected_tokens
+#
+#  assert line_breaks == 25000
+#  assert scroll_breaks == 20
+#  assert section_breaks == 4
+#  assert chapter_breaks == 0
+#
+#  # doc1 * 1000 + delimiter count
+#  expected_length = 25 * (expected_doc1_length-1000) + expected_tokens
+#  assert len(result) == expected_length
+#  
+#  assert False
 
 def test_hash_support():
   assert False

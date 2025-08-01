@@ -8,7 +8,6 @@ import pytest
 # test_books, test_volumes, test_collections
 # test_series, test_shelves, test_libraries
 # test_realistic_parse
-# test_dead_reckoning
 
 def test_scroll_interface():
   coord = Coordinate.from_string("1.2.3/4.5.6/7.8.9")
