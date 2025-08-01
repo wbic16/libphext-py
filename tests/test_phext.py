@@ -2,6 +2,8 @@ from libphext.coordinate import Coordinate
 from libphext.positionedScroll import PositionedScroll
 from libphext.range import Range
 from libphext.phext import Phext
+from datetime import datetime
+from copy import deepcopy
 import pytest
 
 # Upstream tests covered by this module:
@@ -245,7 +247,7 @@ def test_coordinate_based_insert():
 
 def test_coordinate_based_replace():
   phext = Phext()
-  
+
   # replace 'AAA' with 'aaa'
   coord0 = Coordinate.from_string("1.1.1/1.1.1/1.1.1")
   update0 = phext.replace("AAA\x17bbb\x18ccc\x19ddd\x1Aeee\x1Cfff\x1Dggg\x1Ehhh\x1Fiii\x01jjj", coord0, "aaa")
@@ -429,7 +431,7 @@ def test_last_empty_scroll():
   assert parts1.start == 6
   assert parts1.end == 11
   assert parts1.best == target1
-        
+
   test1 = phext.fetch(doc1, target1)
   assert test1 == "world"
 
@@ -642,7 +644,61 @@ def test_phext_soundex_v1():
   assert result == "36\x1741\x171\x174\x177\x1710\x171\x174\x177\x171\x171\x177\x177\x1713\x1816\x1816\x181\x184\x197\x1919\x197\x1910\x1a1\x1a4\x1a1\x1a7\x1a1\x1a7"
 
 def test_insert_performance_2k_scrolls():
-  assert False
+  phext = Phext()
+  doc1 = "the quick brown fox jumped over the lazy dog";
+  next = Coordinate.from_string("1.1.1/1.1.1/1.1.1")
+  result = []
+
+  start = datetime.now()
+  x = 0
+  while x < 2000:
+    x += 1
+    if next.scroll > 32:
+      next.sectionBreak()
+    if next.section > 32:
+      next.chapterBreak()
+    if next.chapter > 32:
+      next.bookBreak()
+    ith = PositionedScroll(deepcopy(next), doc1)
+    result.append(ith)
+    next.scrollBreak()
+
+  result = phext.dephokenize(result)
+  end = datetime.now()
+  duration = end - start
+  elapsed_ms = int((duration).total_seconds() * 1000)
+  print("Performance-2K: " + str(elapsed_ms))
+
+  # require at most 2.5ms per scroll on an i9-13900HX
+  assert elapsed_ms < 5000
+
+  expected = Coordinate.from_string("1.1.1/1.1.1/2.31.17")
+  assert next == expected
+
+  expected_doc1_length = 44
+  assert len(doc1) == expected_doc1_length
+  phext_tokens = 0
+  scroll_breaks = 0
+  section_breaks = 0
+  chapter_breaks = 0
+  for byte in result:
+    if phext.isPhextBreak(byte):
+      phext_tokens += 1
+    if byte == phext.SCROLL_BREAK:
+      scroll_breaks += 1
+    if byte == phext.SECTION_BREAK:
+      section_breaks += 1
+    if byte == phext.CHAPTER_BREAK:
+      chapter_breaks += 1
+
+  expected_tokens = 1999
+  assert phext_tokens == expected_tokens
+  assert scroll_breaks == 1937
+  assert section_breaks == 61
+  assert chapter_breaks == 1
+
+  expected_length = 2000 * expected_doc1_length + expected_tokens
+  assert len(result) == expected_length
 
 def test_insert_performance_medium_scrolls():
   assert False
