@@ -485,3 +485,62 @@ class Phext:
       for coord in hash.keys():
         parts.append(PositionedScroll(coord, hash[coord]))
       return self.dephokenize(parts)
+    
+    def index_phokens(self, buffer:str) -> list[PositionedScroll]:
+      stack = self.phokenize(buffer)
+      offset = 0
+      coord = self.defaultCoordinate()
+      output = []
+      for ps in stack:
+        reference = ps.coord
+        while coord.library < reference.library:
+          coord.libraryBreak()          
+          offset += 1
+        while coord.shelf < reference.shelf:
+          coord.shelfBreak()
+          offset += 1
+        while coord.series < reference.series:
+          coord.seriesBreak()
+          offset += 1
+        while coord.collection < reference.collection:
+          coord.collectionBreak()
+          offset += 1
+        while coord.volume < reference.volume:
+          coord.volumeBreak()
+          offset += 1
+        while coord.book < reference.book:
+          coord.bookBreak()
+          offset += 1
+        while coord.chapter < reference.chapter:
+          coord.chapterBreak()
+          offset += 1
+        while coord.section < reference.section:
+          coord.sectionBreak()
+          offset += 1
+        while coord.scroll < reference.scroll:
+          coord.scrollBreak()
+          offset += 1
+        text = str(offset)
+        output.append(PositionedScroll(copy.deepcopy(coord), text))
+        offset += len(ps.text)
+
+      return output
+
+    def index(self, buffer:str) -> str:
+      output = self.index_phokens(buffer)
+      return self.dephokenize(output)
+    
+    def offset(self, buffer:str, coord:Coordinate) -> int:
+      output = self.index_phokens(buffer)
+      best = self.defaultCoordinate()
+      fetch_coord = coord
+      matched = False
+      for ps in output:
+        if ps.coord <= coord:
+          best = copy.deepcopy(ps.coord)
+        if ps.coord == coord:
+          matched = True
+      if matched == False:
+        fetch_coord = best
+      index = self.dephokenize(output)
+      return int(self.fetch(index, fetch_coord))

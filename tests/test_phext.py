@@ -588,7 +588,56 @@ def test_larger_coordinates():
   assert map == "* 111.222.333/444.555.666/777.888.999: Hello World\n"
 
 def test_phext_index():
-  assert False
+  phext = Phext()
+  example = "first scroll\x17second scroll\x18second section\x19second chapter\x1Abook 2\x1Cvolume 2\x1Dcollection 2\x1Eseries 2\x1Fshelf 2\x01library 2"
+  result = phext.index(example)
+  assert result == "0\x1713\x1827\x1942\x1a57\x1c64\x1d73\x1e86\x1f95\x01103"
+
+  coord1 = Coordinate.from_string("1.1.1/1.1.1/1.1.1")
+  test1 = phext.offset(example, coord1)
+  assert test1 == 0
+
+  coord2 = Coordinate.from_string("1.1.1/1.1.1/1.1.2")
+  test2 = phext.offset(example, coord2)
+  assert test2 == 13
+
+  coord3 = Coordinate.from_string("1.1.1/1.1.1/1.2.1")
+  test3 = phext.offset(example, coord3)
+  assert test3 == 27
+
+  coord4 = Coordinate.from_string("1.1.1/1.1.1/2.1.1")
+  test4 = phext.offset(example, coord4)
+  assert test4 == 42
+
+  coord5 = Coordinate.from_string("1.1.1/1.1.2/1.1.1")
+  test5 = phext.offset(example, coord5)
+  assert test5 == 57
+
+  coord6 = Coordinate.from_string("1.1.1/1.2.1/1.1.1")
+  test6 = phext.offset(example, coord6)
+  assert test6 == 64
+
+  coord7 = Coordinate.from_string("1.1.1/2.1.1/1.1.1")
+  test7 = phext.offset(example, coord7)
+  assert test7 == 73
+
+  coord8 = Coordinate.from_string("1.1.2/1.1.1/1.1.1")
+  test8 = phext.offset(example, coord8)
+  assert test8 == 86
+
+  coord9 = Coordinate.from_string("1.2.1/1.1.1/1.1.1")
+  test9 = phext.offset(example, coord9)
+  assert test9 == 95
+
+  coord9 = Coordinate.from_string("2.1.1/1.1.1/1.1.1")
+  test9 = phext.offset(example, coord9)
+  assert test9 == 103
+
+  coord_invalid = Coordinate.from_string("2.1.1/1.1.1/1.2.1")
+  test_invalid = phext.offset(example, coord_invalid)
+  assert test_invalid == 103
+
+  assert len(example) == 112
 
 def test_scroll_manifest():
   phext = Phext()
