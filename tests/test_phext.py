@@ -580,7 +580,12 @@ def test_textmap():
   assert result == "* 1.1.1/1.1.1/1.1.1: Just a couple of scrolls.\n* 1.1.1/1.1.1/1.1.2: Second scroll\n* 1.1.1/1.1.1/1.1.3: Third scroll\n"
 
 def test_larger_coordinates():
-  assert False
+  phext = Phext()
+  coord = Coordinate.from_string("111.222.333/444.555.666/777.888.999")
+  result = phext.insert("", coord, "Hello World")
+  map = phext.textmap(result)
+  assert len(result) == 4997
+  assert map == "* 111.222.333/444.555.666/777.888.999: Hello World\n"
 
 def test_phext_index():
   assert False
@@ -788,12 +793,53 @@ def test_hash_support():
   serialized = phext.implode(stuff)
   assert serialized == "hello world\x17\x17\x17scroll 4\x01Library 2\x1f\x1f\x1e\x1e\x1e\x1d\x1d\x1d\x1d\x1c\x1c\x1c\x1c\x1c\x1a\x1a\x1a\x1a\x1a\x1a\x19\x19\x19\x19\x19\x19\x19\x18\x18\x18\x18\x18\x18\x18\x18random insertion"
 
-def test_subspace_filter():
-  assert False
+# TODO: not implemented upstream either
+#def test_subspace_filter():
+  # filtering in subspace happens in bands
+  # we split the phext into 36 regions
+  # each region can be further sub-divided into 32 segments
+  # where your scrolls fall into this map determines if they
+  # are selected. subspace filtering happens in bitspace.
+  # we have 6 bits per region to work with:
+  # 0-25:  ABCDEFGHIJKLMNOPQRSTUVWXYZ
+  # 26-51: abcdefghijklmnopqrstuvwxyz
+  # 52-63: 0123456789+/
+  # 
+  # 
+  # 
+  # Collectors (0-15)
+  #             A   B   C   D   E   F   G   H
+  # First n%:   1   2   4   8  16  32  64 100  [8]
+  # Last n%:  100  50  25  12   6   3   2   1  [8]
+  #             I   J   K   L   M   N   O   P
+  # 
+  # Harmonics (16-31)
+  #             Q   R   S   T   U   V   W   X
+  # Primes 1:   2   3   5   7  11  13  17  19  [8]
+  # Primes 2:  23  29  31  37  41  43  47  53  [8]
+  #             Y   Z   a   b   c   d   e   f
+  # 
+  # Scroll Size (32-47)
+  #                 g     h   i   j   k   l   m    n
+  # Smaller Than:  1K    2K  4K  8K 16K 32K 64K 128K [8]
+  # Larger Than:   128K 64K 32K 16K  8K  4K  2K   1K [8]
+  #                 o     p   q   r   s   t   u    v
+  # 
+  # Reserved (48-63)
+  #                 w   x   y   z   0   1   2   3
+  # TBD                                              [8]
+  # TBD                                              [8]
+  #                 4   5   6   7   8   9   +   /
+  # 
+  # 36 characters in base64
+  # 
+  # TODO: create a suite of test filters and verify they select
+  # properly
 
-def test_macrophext():
+# TODO: not implemented upstream either
+#def test_macrophext():
   # maybe add \x02 and \x03 support for very large phexts...?
-  assert False
+  # assert False
 
 def test_phext_breaks():
   phext = Phext()
