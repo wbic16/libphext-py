@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from libphext.coordinate import Coordinate
+from phext.coordinate import Coordinate
 
 @dataclass
 class Range:

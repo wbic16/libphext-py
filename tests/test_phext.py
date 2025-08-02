@@ -1,7 +1,7 @@
-from libphext.coordinate import Coordinate
-from libphext.positionedScroll import PositionedScroll
-from libphext.range import Range
-from libphext.phext import Phext
+from phext.coordinate import Coordinate
+from phext.positionedScroll import PositionedScroll
+from phext.range import Range
+from phext.phext import Phext
 from datetime import datetime
 from copy import deepcopy
 import pytest

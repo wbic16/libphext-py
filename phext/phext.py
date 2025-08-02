@@ -4,9 +4,9 @@ import xxhash
 from dataclasses import dataclass
 from typing import List
 
-from libphext.coordinate import Coordinate
-from libphext.positionedScroll import PositionedScroll
-from libphext.range import Range
+from phext.coordinate import Coordinate
+from phext.positionedScroll import PositionedScroll
+from phext.range import Range
 
 @dataclass
 class SubspaceBeacon:

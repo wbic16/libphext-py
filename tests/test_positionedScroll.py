@@ -1,6 +1,6 @@
-from libphext.coordinate import Coordinate
-from libphext.positionedScroll import PositionedScroll
-from libphext.phext import Phext
+from phext.coordinate import Coordinate
+from phext.positionedScroll import PositionedScroll
+from phext.phext import Phext
 import pytest
 
 # Upstream tests covered by this module:

@@ -1,4 +1,4 @@
-from libphext.coordinate import Coordinate
+from phext.coordinate import Coordinate
 import pytest
 
 # Upstream tests covered by this module:
@@ -9,7 +9,7 @@ import pytest
 # test_url_encoding
 
 # notes
-# Apparently there aren't any test methods in libphext-rs for break methods?
+# Apparently there aren't any test methods in phext-rs for break methods?
 
 # expected valid conditions
 
