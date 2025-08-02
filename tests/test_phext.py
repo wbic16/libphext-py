@@ -773,7 +773,20 @@ def test_insert_performance_2k_scrolls():
 #  assert False
 
 def test_hash_support():
-  assert False
+  phext = Phext()
+  stuff = phext.explode("hello world\x17\x17\x17scroll 4\x01Library 2")
+  scroll1_address = Coordinate.from_string("1.1.1/1.1.1/1.1.1")
+  scroll2_address = Coordinate.from_string("1.1.1/1.1.1/1.1.4")
+  scroll3_address = Coordinate.from_string("2.1.1/1.1.1/1.1.1")
+  assert stuff[scroll1_address] == "hello world"
+  assert stuff[scroll2_address] == "scroll 4"
+  assert stuff[scroll3_address] == "Library 2"
+
+  scroll4_address = Coordinate.from_string("2.3.4/5.6.7/8.9.1")
+  stuff[scroll4_address] = "random insertion"
+
+  serialized = phext.implode(stuff)
+  assert serialized == "hello world\x17\x17\x17scroll 4\x01Library 2\x1f\x1f\x1e\x1e\x1e\x1d\x1d\x1d\x1d\x1c\x1c\x1c\x1c\x1c\x1a\x1a\x1a\x1a\x1a\x1a\x19\x19\x19\x19\x19\x19\x19\x18\x18\x18\x18\x18\x18\x18\x18random insertion"
 
 def test_subspace_filter():
   assert False

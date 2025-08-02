@@ -472,3 +472,16 @@ class Phext:
         if byte in letter6:
           value += 6
       return str(value % 99)
+    
+    def explode(self, buffer:str) -> dict[Coordinate, str]:
+      parts = self.phokenize(buffer)
+      hash: dict[Coordinate, str] = {}
+      for ps in parts:
+        hash[ps.coord] = ps.text
+      return hash
+    
+    def implode(self, hash: dict[Coordinate, str]) -> str:
+      parts = []
+      for coord in hash.keys():
+        parts.append(PositionedScroll(coord, hash[coord]))
+      return self.dephokenize(parts)
