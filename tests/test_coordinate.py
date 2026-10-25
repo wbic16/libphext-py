@@ -1,4 +1,5 @@
 from phext.coordinate import Coordinate
+from phext.phext import Phext
 import pytest
 
 # Upstream tests covered by this module:
@@ -130,6 +131,22 @@ def test_scroll_break():
    coord.scrollBreak()
    expected = Coordinate(98,76,54, 32,10,1, 23,45,68)
    assert coord == expected
+
+def test_breaks_saturate_at_999():
+   coord = Coordinate(999,999,999, 999,999,999, 999,999,998)
+   coord.scrollBreak()
+   assert coord == Coordinate(999,999,999, 999,999,999, 999,999,999)
+   coord.scrollBreak()
+   assert coord == Coordinate(999,999,999, 999,999,999, 999,999,999)
+   coord.sectionBreak()
+   assert coord == Coordinate(999,999,999, 999,999,999, 999,999,1)
+   coord.libraryBreak()
+   assert coord == Coordinate(999,1,1, 1,1,1, 1,1,1)
+
+def test_phokenize_scroll_saturation():
+   text = "a" + "" * 1003 + "b"
+   scrolls = [ps for ps in Phext().phokenize(text) if ps.text]
+   assert [str(ps.coord) for ps in scrolls] == ["1.1.1/1.1.1/1.1.1", "1.1.1/1.1.1/1.1.999"]
 
 # invalid conditions
 
