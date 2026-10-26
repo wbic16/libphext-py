@@ -383,7 +383,9 @@ class Phext:
       return "".join(result)
     
     def checksum(self, buffer:str) -> str:
-      hash = xxhash.xxh3_128(buffer).hexdigest()
+      # xxh3-128 of the UTF-8 bytes, as 32 hex digits: the same value libphext-rs returns.
+      # xxhash 4 no longer accepts str, so the text is encoded explicitly.
+      hash = xxhash.xxh3_128(buffer.encode("utf-8")).hexdigest()
       return hash
     
     def manifest(self, buffer:str) -> str:

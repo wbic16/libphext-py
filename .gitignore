@@ -2,3 +2,4 @@
 phext/__pycache__/*
 tests/__pycache__/*
 unit-test.phext
+release-dist/

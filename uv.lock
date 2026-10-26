@@ -326,7 +326,7 @@ wheels = [
 
 [[package]]
 name = "phext"
-version = "0.3.0"
+version = "0.3.2"
 source = { editable = "." }
 dependencies = [
     { name = "xxhash" },
@@ -339,6 +339,11 @@ dev = [
     { name = "ruff" },
 ]
 
+[package.dev-dependencies]
+dev = [
+    { name = "pytest" },
+]
+
 [package.metadata]
 requires-dist = [
     { name = "mypy", marker = "extra == 'dev'" },
@@ -347,6 +352,9 @@ requires-dist = [
     { name = "xxhash" },
 ]
 provides-extras = ["dev"]
+
+[package.metadata.requires-dev]
+dev = [{ name = "pytest" }]
 
 [[package]]
 name = "pluggy"

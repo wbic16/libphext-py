@@ -3,7 +3,7 @@ name = "phext"
 version = "0.3.2"
 description = "Pythonic implementation of phext"
 authors = [{ name = "Will Bickford", email = "wbic16@gmail.com" }]
-readme = "README.md"
+readme = "readme.md"
 license = { text = "MIT" }
 requires-python = ">=3.10"
 dependencies = ["xxhash"]
@@ -19,11 +19,21 @@ classifiers = [
 
 [project.urls]
 Homepage = "https://phext.io"
-Repository = "https://github.com/wbic16/phext-py"
-Issues = "https://github.com/wbic16/phext-py/issues"
+Repository = "https://github.com/wbic16/libphext-py"
+Issues = "https://github.com/wbic16/libphext-py/issues"
 
 [project.optional-dependencies]
 dev = ["pytest", "mypy", "ruff"]
+
+# `uv run pytest` installs this group into the project's .venv. Without it,
+# uv falls back to whatever pytest is on PATH, which tests that Python's
+# installed phext instead of this checkout.
+[dependency-groups]
+dev = ["pytest"]
+
+[tool.pytest.ini_options]
+# Import phext from this checkout, whichever pytest runs the tests.
+pythonpath = ["."]
 
 [build-system]
 requires = ["hatchling"]
