@@ -1,6 +1,13 @@
 from dataclasses import dataclass
 from functools import total_ordering
 
+COORDINATE_MAXIMUM = 1000
+
+def advance_coordinate(index: int) -> int:
+    # saturate at 999, matching libphext-rs: can't advance beyond the maximum
+    next = index + 1
+    return next if next < COORDINATE_MAXIMUM else index
+
 @total_ordering
 @dataclass
 class Coordinate:
@@ -37,7 +44,7 @@ class Coordinate:
             raise ValueError(f"Invalid coordinate string: {coord_str} {e}") from e
 
     def libraryBreak(self):
-        self.library += 1
+        self.library = advance_coordinate(self.library)
         self.shelf = 1
         self.series = 1
         self.collection = 1
@@ -48,7 +55,7 @@ class Coordinate:
         self.scroll = 1
 
     def shelfBreak(self):
-        self.shelf += 1
+        self.shelf = advance_coordinate(self.shelf)
         self.series = 1
         self.collection = 1
         self.volume = 1
@@ -58,7 +65,7 @@ class Coordinate:
         self.scroll = 1
 
     def seriesBreak(self):
-        self.series += 1
+        self.series = advance_coordinate(self.series)
         self.collection = 1
         self.volume = 1
         self.book = 1
@@ -67,7 +74,7 @@ class Coordinate:
         self.scroll = 1
 
     def collectionBreak(self):
-        self.collection += 1
+        self.collection = advance_coordinate(self.collection)
         self.volume = 1
         self.book = 1
         self.chapter = 1
@@ -75,29 +82,29 @@ class Coordinate:
         self.scroll = 1
 
     def volumeBreak(self):
-        self.volume += 1
+        self.volume = advance_coordinate(self.volume)
         self.book = 1
         self.chapter = 1
         self.section = 1
         self.scroll = 1
 
     def bookBreak(self):
-        self.book += 1
+        self.book = advance_coordinate(self.book)
         self.chapter = 1
         self.section = 1
         self.scroll = 1
 
     def chapterBreak(self):
-        self.chapter += 1
+        self.chapter = advance_coordinate(self.chapter)
         self.section = 1
         self.scroll = 1
 
     def sectionBreak(self):
-        self.section += 1
+        self.section = advance_coordinate(self.section)
         self.scroll = 1
 
     def scrollBreak(self):
-        self.scroll += 1
+        self.scroll = advance_coordinate(self.scroll)
     
     def __init__(self, lb, sf, sr, cn, vm, bk, ch, sn, sc):
         self.library = int(lb)
