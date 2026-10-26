@@ -1,6 +1,6 @@
 [project]
 name = "phext"
-version = "0.3.0"
+version = "0.3.2"
 description = "Pythonic implementation of phext"
 authors = [{ name = "Will Bickford", email = "wbic16@gmail.com" }]
 readme = "README.md"
