@@ -1,9 +1,9 @@
 [project]
 name = "phext"
-version = "0.3.0"
+version = "0.3.2"
 description = "Pythonic implementation of phext"
 authors = [{ name = "Will Bickford", email = "wbic16@gmail.com" }]
-readme = "README.md"
+readme = "readme.md"
 license = { text = "MIT" }
 requires-python = ">=3.10"
 dependencies = ["xxhash"]
@@ -19,8 +19,8 @@ classifiers = [
 
 [project.urls]
 Homepage = "https://phext.io"
-Repository = "https://github.com/wbic16/phext-py"
-Issues = "https://github.com/wbic16/phext-py/issues"
+Repository = "https://github.com/wbic16/libphext-py"
+Issues = "https://github.com/wbic16/libphext-py/issues"
 
 [project.optional-dependencies]
 dev = ["pytest", "mypy", "ruff"]
