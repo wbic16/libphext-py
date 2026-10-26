@@ -1,12 +1,37 @@
 import copy
+import re
 import xxhash
 
 from dataclasses import dataclass
-from typing import List
+from typing import Iterator, List
 
-from phext.coordinate import Coordinate
+from phext.coordinate import COORDINATE_MAXIMUM, Coordinate
 from phext.positionedScroll import PositionedScroll
 from phext.range import Range
+
+# The 9 dimension breaks, ordered from library (dimension 0) down to scroll (dimension 8).
+# Note: 0x1B (escape) is deliberately not a delimiter.
+_DIMENSION_BREAKS = "\x01\x1F\x1E\x1D\x1C\x1A\x19\x18\x17"
+_BREAK_DIMENSION = {ch: d for d, ch in enumerate(_DIMENSION_BREAKS)}
+# A maximal run of scroll text (anything but a dimension break)
+_SCROLL_TEXT = re.compile("[^\x01\x17-\x1A\x1C-\x1F]+")
+_NEXT_DIMENSION_BREAK = re.compile("[\x01\x17-\x1A\x1C-\x1F]")
+# The first character that `isPhextBreak` accepts (dimension breaks plus line breaks)
+_PHEXT_BREAK = re.compile("[\n\x01\x17-\x1A\x1C-\x1F]")
+_EXPAND_TABLE = str.maketrans("\n\x17\x18\x19\x1A\x1C\x1D\x1E\x1F", "\x17\x18\x19\x1A\x1C\x1D\x1E\x1F\x01")
+_CONTRACT_TABLE = str.maketrans("\x01\x1F\x1E\x1D\x1C\x1A\x19\x18\x17", "\x1F\x1E\x1D\x1C\x1A\x19\x18\x17\n")
+
+def _apply_break(coord: list, dimension: int):
+  # same as Coordinate.<dimension>Break(): saturate at 999 and reset the lower dimensions
+  if coord[dimension] + 1 < COORDINATE_MAXIMUM:
+    coord[dimension] += 1
+  for lower in range(dimension + 1, 9):
+    coord[lower] = 1
+
+def _set_coordinate(coord: Coordinate, values):
+  (coord.library, coord.shelf, coord.series,
+   coord.collection, coord.volume, coord.book,
+   coord.chapter, coord.section, coord.scroll) = values
 
 @dataclass
 class SubspaceBeacon:
@@ -39,8 +64,7 @@ class Phext:
       location = self.defaultCoordinate()
 
     def fetch(self, buffer:str, coord:Coordinate) -> dict[Coordinate, str]:
-      stack = self.phokenize(buffer)
-      for ps in stack:
+      for ps in self._iter_scrolls(buffer):
         if ps.coord == coord:
           return ps.text
       return ""
@@ -57,110 +81,99 @@ class Phext:
             byte == self.SHELF_BREAK or \
             byte == self.LIBRARY_BREAK
     
+    def _iter_scrolls(self, buffer:str) -> Iterator[PositionedScroll]:
+      # One pass: each maximal run of non-delimiter text is a scroll at the current
+      # coordinate; only the delimiters between runs are visited individually.
+      walker = list(self.defaultCoordinate().as_tuple())
+      position = 0
+      for run in _SCROLL_TEXT.finditer(buffer):
+        start = run.start()
+        for index in range(position, start):
+          _apply_break(walker, _BREAK_DIMENSION[buffer[index]])
+        yield PositionedScroll(Coordinate(*walker), run.group())
+        position = run.end()
+
     def phokenize(self, buffer:str) -> List[PositionedScroll]:
-      result = []
-      location = self.defaultCoordinate()
-      next = self.defaultCoordinate()
-      temp = ""
-      # decoded = buffer.decode("utf-8")      
-      for ch in buffer:
-        dimension_break = False
-        if ch == self.LIBRARY_BREAK:
-          next.libraryBreak()
-          dimension_break = True
-        if ch == self.SHELF_BREAK:
-          next.shelfBreak()
-          dimension_break = True
-        if ch == self.SERIES_BREAK:
-          next.seriesBreak()
-          dimension_break = True
-        if ch == self.COLLECTION_BREAK:
-          next.collectionBreak()
-          dimension_break = True
-        if ch == self.VOLUME_BREAK:
-          next.volumeBreak()
-          dimension_break = True
-        if ch == self.BOOK_BREAK:
-          next.bookBreak()
-          dimension_break = True
-        if ch == self.CHAPTER_BREAK:
-          next.chapterBreak()
-          dimension_break = True
-        if ch == self.SECTION_BREAK:
-          next.sectionBreak()
-          dimension_break = True
-        if ch == self.SCROLL_BREAK:
-          next.scrollBreak()
-          dimension_break = True
-        
-        if dimension_break == True:
-          if len(temp) > 0:
-            item = PositionedScroll(location, temp)
-            result.append(item)
-            temp = ""
-        else:
-          temp += str(ch)
-          location = copy.deepcopy(next)
+      return list(self._iter_scrolls(buffer))
 
-      if len(temp) > 0:
-        item = PositionedScroll(location, temp)
-        result.append(item)
+    def _advance(self, location: Coordinate, target: Coordinate) -> str:
+      # Returns the delimiters that move `location` up to `target`, updating `location` in place.
+      # Equivalent to emitting one break at a time while location < target, but computed per dimension.
+      here = location.as_tuple()
+      there = target.as_tuple()
+      if not here < there:
+        return ""
+      if max(there) >= COORDINATE_MAXIMUM:
+        # breaks saturate at 999, so a target dimension of 1000+ is unreachable and the
+        # original stepwise walk can spin forever; defer to it rather than change behavior here
+        return self._advance_stepwise(location, target)
+      dimension = 0
+      while here[dimension] == there[dimension]:
+        dimension += 1
+      parts = [_DIMENSION_BREAKS[dimension] * (there[dimension] - here[dimension])]
+      reached = list(here[:dimension]) + [there[dimension]] + [1] * (8 - dimension)
+      for lower in range(dimension + 1, 9):
+        if there[lower] < 1:
+          break # location is now past target
+        parts.append(_DIMENSION_BREAKS[lower] * (there[lower] - 1))
+        reached[lower] = there[lower]
+      _set_coordinate(location, reached)
+      return "".join(parts)
 
-      return result
-    
-    def append_scroll(self, entry: PositionedScroll, location: Coordinate) -> PositionedScroll:
-      output = ""
-      compare = entry.coord
-      while location < entry.coord:
+    def _advance_stepwise(self, location: Coordinate, compare: Coordinate) -> str:
+      output = []
+      while location < compare:
         if location.library < compare.library:
-          output += Phext.LIBRARY_BREAK
+          output.append(Phext.LIBRARY_BREAK)
           location.libraryBreak()
           continue
         if location.shelf < compare.shelf:
-          output += Phext.SHELF_BREAK
+          output.append(Phext.SHELF_BREAK)
           location.shelfBreak()
           continue
         if location.series < compare.series:
-          output += Phext.SERIES_BREAK
+          output.append(Phext.SERIES_BREAK)
           location.seriesBreak()
           continue
         if location.collection < compare.collection:
-          output += Phext.COLLECTION_BREAK
+          output.append(Phext.COLLECTION_BREAK)
           location.collectionBreak()
           continue
         if location.volume < compare.volume:
-          output += Phext.VOLUME_BREAK
+          output.append(Phext.VOLUME_BREAK)
           location.volumeBreak()
           continue
         if location.book < compare.book:
-          output += Phext.BOOK_BREAK
+          output.append(Phext.BOOK_BREAK)
           location.bookBreak()
           continue
         if location.chapter < compare.chapter:
-          output += Phext.CHAPTER_BREAK
+          output.append(Phext.CHAPTER_BREAK)
           location.chapterBreak()
           continue
         if location.section < compare.section:
-          output += Phext.SECTION_BREAK
+          output.append(Phext.SECTION_BREAK)
           location.sectionBreak()
           continue
         if location.scroll < compare.scroll:
-          output += Phext.SCROLL_BREAK
+          output.append(Phext.SCROLL_BREAK)
           location.scrollBreak()
           continue
+      return "".join(output)
+
+    def append_scroll(self, entry: PositionedScroll, location: Coordinate) -> PositionedScroll:
+      output = self._advance(location, entry.coord)
       if len(entry.text) > 0:
         output += entry.text
-      result = PositionedScroll(location, output)
-      return result
+      return PositionedScroll(location, output)
 
     def dephokenize(self, stack: list[PositionedScroll]) -> str:
-      result = ""
+      result = []
       location = self.defaultCoordinate()
       for ps in stack:
-        next = self.append_scroll(ps, location)
-        result += next.text
-        location = next.coord
-      return result
+        result.append(self._advance(location, ps.coord))
+        result.append(ps.text)
+      return "".join(result)
 
     def normalize(self, buffer:str) -> str:
       arr = self.phokenize(buffer)
@@ -216,10 +229,9 @@ class Phext:
       return self.dephokenize(result)
     
     def next_scroll(self, buffer:str, coord:Coordinate) -> List[PositionedScroll]:
-      stack = self.phokenize(buffer)
       found = False
       result = []
-      for ps in stack:
+      for ps in self._iter_scrolls(buffer):
         if found == True:
           result.append(ps)
           return result
@@ -229,8 +241,12 @@ class Phext:
       return result
     
     def get_subspace_coordinates(self, buffer:str, target:Coordinate):
-      walker = self.defaultCoordinate()
-      best = self.defaultCoordinate()
+      # The walker only moves on dimension breaks, so a run of scroll text gives the same
+      # answer at every character: we visit its first character and skip the rest. Once
+      # the target has been passed (stage 2) nothing can change, so we stop scanning.
+      walker = list(self.defaultCoordinate().as_tuple())
+      goal = target.as_tuple()
+      best = self.defaultCoordinate().as_tuple()
       subspace_index = 0
       start = 0
       end = 0
@@ -238,49 +254,36 @@ class Phext:
       max = len(buffer)
 
       while subspace_index < max:
-        next = buffer[subspace_index]
-        compare = next
-
+        here = tuple(walker)
         if stage == 0:
-          if walker == target:
+          if here == goal:
             stage = 1
             start = subspace_index
-            best = copy.deepcopy(walker)
-          if walker < target:
-            best = copy.deepcopy(walker)
-        if stage < 2 and walker > target:
+            best = here
+          elif here < goal:
+            best = here
+        if here > goal: # stage < 2 here
           if stage == 0:
             start = subspace_index - 1
           end = subspace_index - 1
-          stage = 2    
+          stage = 2
+          break
 
-        if self.isPhextBreak(next):
-          if compare == self.SCROLL_BREAK:
-            walker.scrollBreak()
-          if compare == self.SECTION_BREAK:
-            walker.sectionBreak()
-          if compare == self.CHAPTER_BREAK:
-            walker.chapterBreak()
-          if compare == self.BOOK_BREAK:
-            walker.bookBreak()
-          if compare == self.VOLUME_BREAK:
-            walker.volumeBreak()
-          if compare == self.COLLECTION_BREAK:
-            walker.collectionBreak()
-          if compare == self.SERIES_BREAK:
-            walker.seriesBreak()
-          if compare == self.SHELF_BREAK:
-            walker.shelfBreak()
-          if compare == self.LIBRARY_BREAK:
-            walker.libraryBreak()
-        
-        if stage < 2 and walker > target:
+        dimension = _BREAK_DIMENSION.get(buffer[subspace_index])
+        if dimension is None:
+          delimiter = _NEXT_DIMENSION_BREAK.search(buffer, subspace_index)
+          subspace_index = delimiter.start() if delimiter else max
+          continue
+
+        _apply_break(walker, dimension)
+        if tuple(walker) > goal:
           end = subspace_index
           stage = 2
-        
+          break
+
         subspace_index += 1
 
-      if stage == 1 and walker == target:
+      if stage == 1 and tuple(walker) == goal:
         end = max
         stage = 2
 
@@ -288,7 +291,7 @@ class Phext:
         start = max
         end = max
 
-      result = SubspaceBeacon(start, end, best)
+      result = SubspaceBeacon(start, end, Coordinate(*best))
       return result
     
     def merge(self, left: str, right:str) -> str:
@@ -298,7 +301,7 @@ class Phext:
       tri = 0
       maxtl = len(tl)
       maxtr = len(tr)
-      result = ""
+      result = []
       coord = self.defaultCoordinate()
 
       while True:
@@ -309,24 +312,24 @@ class Phext:
 
         if pick_left:
           next = self.append_scroll(tl[tli], coord)
-          result += next.text
+          result.append(next.text)
           coord = next.coord
           tli += 1
         if pick_right:
           next = self.append_scroll(tr[tri], coord)
-          result += next.text
+          result.append(next.text)
           coord = next.coord
           tri += 1
 
         if pick_left == False and pick_right == False:
           break
 
-      return result
+      return "".join(result)
     
     def subtract(self, left:str, right:str) -> str:
       pl = self.phokenize(left)
       pr = self.phokenize(right)
-      result = ""
+      result = []
       pri = 0
       max = len(pr)
       coord = self.defaultCoordinate()
@@ -340,98 +343,49 @@ class Phext:
             pri += 1
         if do_append:
           next = self.append_scroll(item, coord)
-          result += next.text
+          result.append(next.text)
           coord = next.coord
-      return result
+      return "".join(result)
     
     def expand(self, buffer:str) -> str:
-      result = ""
-      for char in buffer:
-        if char == self.LINE_BREAK:
-          result += self.SCROLL_BREAK
-        elif char == self.SCROLL_BREAK:
-          result += self.SECTION_BREAK
-        elif char == self.SECTION_BREAK:
-          result += self.CHAPTER_BREAK
-        elif char == self.CHAPTER_BREAK:
-          result += self.BOOK_BREAK
-        elif char == self.BOOK_BREAK:
-          result += self.VOLUME_BREAK
-        elif char == self.VOLUME_BREAK:
-          result += self.COLLECTION_BREAK
-        elif char == self.COLLECTION_BREAK:
-          result += self.SERIES_BREAK
-        elif char == self.SERIES_BREAK:
-          result += self.SHELF_BREAK
-        elif char == self.SHELF_BREAK:
-          result += self.LIBRARY_BREAK
-        else:
-          result += char
-      return result
+      return buffer.translate(_EXPAND_TABLE)
     
     def contract(self, buffer:str) -> str:
-      result = ""
-      for char in buffer:
-        if char == self.LIBRARY_BREAK:
-          result += self.SHELF_BREAK
-        elif char == self.SHELF_BREAK:
-          result += self.SERIES_BREAK
-        elif char == self.SERIES_BREAK:
-          result += self.COLLECTION_BREAK
-        elif char == self.COLLECTION_BREAK:
-          result += self.VOLUME_BREAK
-        elif char == self.VOLUME_BREAK:
-          result += self.BOOK_BREAK
-        elif char == self.BOOK_BREAK:
-          result += self.CHAPTER_BREAK
-        elif char == self.CHAPTER_BREAK:
-          result += self.SECTION_BREAK
-        elif char == self.SECTION_BREAK:
-          result += self.SCROLL_BREAK
-        elif char == self.SCROLL_BREAK:
-          result += self.LINE_BREAK
-        else:
-          result += char
-      return result
+      return buffer.translate(_CONTRACT_TABLE)
     
     def create_summary(self, buffer:str) -> str:
-      limit = 32
-      max = len(buffer)
-      if max < 32:
-        limit = max
-      summary = ""
-      for char in buffer:
-        if self.isPhextBreak(char):
-          break
-        summary += char
+      # everything up to the first line or dimension break
+      first_break = _PHEXT_BREAK.search(buffer)
+      summary = buffer if first_break is None else buffer[:first_break.start()]
       if len(summary) < len(buffer):
         summary += "..."
       return summary
     
     def navmap(self, urlbase:str, buffer:str) -> str:
       stack = self.phokenize(buffer)
-      result = ""
+      result = []
       max = len(stack)
       if max > 0:
-        result += "<ul>\n"
+        result.append("<ul>\n")
       for ps in stack:
         urlcoord = ps.coord.urlencoded()
         summary = self.create_summary(ps.text)
-        result += f"<li><a href=\"{urlbase}{urlcoord}\">{ps.coord} {summary}</a></li>\n"
+        result.append(f"<li><a href=\"{urlbase}{urlcoord}\">{ps.coord} {summary}</a></li>\n")
       if max > 0:
-        result += "</ul>\n"
-      return result
-    
+        result.append("</ul>\n")
+      return "".join(result)
+
     def textmap(self, buffer:str) -> str:
-      stack = self.phokenize(buffer)
-      result = ""
-      for ps in stack:
+      result = []
+      for ps in self._iter_scrolls(buffer):
         summary = self.create_summary(ps.text)
-        result += f"* {ps.coord}: {summary}\n"
-      return result
+        result.append(f"* {ps.coord}: {summary}\n")
+      return "".join(result)
     
     def checksum(self, buffer:str) -> str:
-      hash = xxhash.xxh3_128(buffer).hexdigest()
+      # xxh3-128 of the UTF-8 bytes, as 32 hex digits: the same value libphext-rs returns.
+      # xxhash 4 no longer accepts str, so the text is encoded explicitly.
+      hash = xxhash.xxh3_128(buffer.encode("utf-8")).hexdigest()
       return hash
     
     def manifest(self, buffer:str) -> str:
@@ -487,41 +441,21 @@ class Phext:
       return self.dephokenize(parts)
     
     def index_phokens(self, buffer:str) -> list[PositionedScroll]:
-      stack = self.phokenize(buffer)
       offset = 0
-      coord = self.defaultCoordinate()
+      coord = list(self.defaultCoordinate().as_tuple())
       output = []
-      for ps in stack:
-        reference = ps.coord
-        while coord.library < reference.library:
-          coord.libraryBreak()          
-          offset += 1
-        while coord.shelf < reference.shelf:
-          coord.shelfBreak()
-          offset += 1
-        while coord.series < reference.series:
-          coord.seriesBreak()
-          offset += 1
-        while coord.collection < reference.collection:
-          coord.collectionBreak()
-          offset += 1
-        while coord.volume < reference.volume:
-          coord.volumeBreak()
-          offset += 1
-        while coord.book < reference.book:
-          coord.bookBreak()
-          offset += 1
-        while coord.chapter < reference.chapter:
-          coord.chapterBreak()
-          offset += 1
-        while coord.section < reference.section:
-          coord.sectionBreak()
-          offset += 1
-        while coord.scroll < reference.scroll:
-          coord.scrollBreak()
-          offset += 1
+      for ps in self._iter_scrolls(buffer):
+        reference = ps.coord.as_tuple()
+        # advance each dimension in turn (library first), counting one delimiter per step;
+        # phokenize never yields a dimension above 999, so no step saturates
+        for dimension in range(9):
+          if coord[dimension] < reference[dimension]:
+            offset += reference[dimension] - coord[dimension]
+            coord[dimension] = reference[dimension]
+            for lower in range(dimension + 1, 9):
+              coord[lower] = 1
         text = str(offset)
-        output.append(PositionedScroll(copy.deepcopy(coord), text))
+        output.append(PositionedScroll(Coordinate(*coord), text))
         offset += len(ps.text)
 
       return output
