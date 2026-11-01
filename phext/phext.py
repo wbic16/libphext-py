@@ -5,7 +5,7 @@ import xxhash
 from dataclasses import dataclass
 from typing import Iterator, List
 
-from phext.coordinate import COORDINATE_MAXIMUM, Coordinate
+from phext.coordinate import Coordinate
 from phext.positionedScroll import PositionedScroll
 from phext.range import Range
 
@@ -22,9 +22,8 @@ _EXPAND_TABLE = str.maketrans("\n\x17\x18\x19\x1A\x1C\x1D\x1E\x1F", "\x17\x18\x1
 _CONTRACT_TABLE = str.maketrans("\x01\x1F\x1E\x1D\x1C\x1A\x19\x18\x17", "\x1F\x1E\x1D\x1C\x1A\x19\x18\x17\n")
 
 def _apply_break(coord: list, dimension: int):
-  # same as Coordinate.<dimension>Break(): saturate at 999 and reset the lower dimensions
-  if coord[dimension] + 1 < COORDINATE_MAXIMUM:
-    coord[dimension] += 1
+  # same as Coordinate.<dimension>Break(): advance (unbounded) and reset the lower dimensions
+  coord[dimension] += 1
   for lower in range(dimension + 1, 9):
     coord[lower] = 1
 
@@ -93,6 +92,20 @@ class Phext:
         yield PositionedScroll(Coordinate(*walker), run.group())
         position = run.end()
 
+    def _iter_offsets(self, buffer:str) -> Iterator[tuple[Coordinate, int, int]]:
+      # The same single pass as _iter_scrolls (same walker, same breaks),
+      # but yielding each scroll's character offset and
+      # length instead of its text: (coordinate, start, length). Runs are the
+      # _SCROLL_TEXT matches, so start/length come straight from the regex.
+      walker = list(self.defaultCoordinate().as_tuple())
+      position = 0
+      for run in _SCROLL_TEXT.finditer(buffer):
+        start = run.start()
+        for index in range(position, start):
+          _apply_break(walker, _BREAK_DIMENSION[buffer[index]])
+        yield (Coordinate(*walker), start, run.end() - start)
+        position = run.end()
+
     def phokenize(self, buffer:str) -> List[PositionedScroll]:
       return list(self._iter_scrolls(buffer))
 
@@ -103,10 +116,8 @@ class Phext:
       there = target.as_tuple()
       if not here < there:
         return ""
-      if max(there) >= COORDINATE_MAXIMUM:
-        # breaks saturate at 999, so a target dimension of 1000+ is unreachable and the
-        # original stepwise walk can spin forever; defer to it rather than change behavior here
-        return self._advance_stepwise(location, target)
+      # components are unbounded (0.4.0), so every target is reachable by
+      # advancing; the per-dimension computation below holds at any magnitude
       dimension = 0
       while here[dimension] == there[dimension]:
         dimension += 1
@@ -446,8 +457,7 @@ class Phext:
       output = []
       for ps in self._iter_scrolls(buffer):
         reference = ps.coord.as_tuple()
-        # advance each dimension in turn (library first), counting one delimiter per step;
-        # phokenize never yields a dimension above 999, so no step saturates
+        # advance each dimension in turn (library first), counting one delimiter per step
         for dimension in range(9):
           if coord[dimension] < reference[dimension]:
             offset += reference[dimension] - coord[dimension]
@@ -478,3 +488,23 @@ class Phext:
         fetch_coord = best
       index = self.dephokenize(output)
       return int(self.fetch(index, fetch_coord))
+
+    def index_offsets(self, buffer:str) -> dict[Coordinate, tuple[int, int]]:
+      # One pass over the buffer building coordinate -> (char_offset, length)
+      # for every scroll, so repeated fetches against one buffer stop paying
+      # a scan per query (fetch walks, and offset() rebuilds its index on
+      # every call). When two scrolls land on the same coordinate the FIRST
+      # is kept, matching
+      # fetch(): it returns the first scroll at a coordinate.
+      offsets: dict[Coordinate, tuple[int, int]] = {}
+      for coord, start, length in self._iter_offsets(buffer):
+        if coord not in offsets:
+          offsets[coord] = (start, length)
+      return offsets
+
+    def indexed(self, buffer:str):
+      # Convenience constructor for phext.indexed.IndexedPhext: an object
+      # that builds the offset index once and answers fetches from it.
+      # Imported here to keep phext.indexed free to import this module.
+      from phext.indexed import IndexedPhext
+      return IndexedPhext(buffer)

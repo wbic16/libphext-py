@@ -132,21 +132,22 @@ def test_scroll_break():
    expected = Coordinate(98,76,54, 32,10,1, 23,45,68)
    assert coord == expected
 
-def test_breaks_saturate_at_999():
+def test_breaks_are_unbounded():
+   # 0.4.0 removed the 999 cap: breaks keep advancing past it
    coord = Coordinate(999,999,999, 999,999,999, 999,999,998)
    coord.scrollBreak()
    assert coord == Coordinate(999,999,999, 999,999,999, 999,999,999)
    coord.scrollBreak()
-   assert coord == Coordinate(999,999,999, 999,999,999, 999,999,999)
+   assert coord == Coordinate(999,999,999, 999,999,999, 999,999,1000)
    coord.sectionBreak()
-   assert coord == Coordinate(999,999,999, 999,999,999, 999,999,1)
+   assert coord == Coordinate(999,999,999, 999,999,999, 999,1000,1)
    coord.libraryBreak()
-   assert coord == Coordinate(999,1,1, 1,1,1, 1,1,1)
+   assert coord == Coordinate(1000,1,1, 1,1,1, 1,1,1)
 
-def test_phokenize_scroll_saturation():
+def test_phokenize_scroll_unbounded():
    text = "a" + "" * 1003 + "b"
    scrolls = [ps for ps in Phext().phokenize(text) if ps.text]
-   assert [str(ps.coord) for ps in scrolls] == ["1.1.1/1.1.1/1.1.1", "1.1.1/1.1.1/1.1.999"]
+   assert [str(ps.coord) for ps in scrolls] == ["1.1.1/1.1.1/1.1.1", "1.1.1/1.1.1/1.1.1004"]
 
 # invalid conditions
 
@@ -154,9 +155,21 @@ def test_no_input():
     with pytest.raises(ValueError):
       coord = Coordinate.from_string("")
 
-def test_too_large_coordinates():
-    with pytest.raises(ValueError):
-      coord = Coordinate.from_string("1000.1001.1002/1003.1004.1005/1006.1007.1008")
+def test_very_large_coordinates_round_trip():
+    # components above 999 are valid since 0.4.0 (unbounded coordinates)
+    text = "1000.1001.1002/1003.1004.1005/1006.1007.1008"
+    coord = Coordinate.from_string(text)
+    assert coord.library == 1000
+    assert coord.shelf == 1001
+    assert coord.series == 1002
+    assert coord.collection == 1003
+    assert coord.volume == 1004
+    assert coord.book == 1005
+    assert coord.chapter == 1006
+    assert coord.section == 1007
+    assert coord.scroll == 1008
+    assert str(coord) == text
+    assert Coordinate.from_string(str(coord)) == coord
 
 def test_negative_coordinates():
     with pytest.raises(ValueError):

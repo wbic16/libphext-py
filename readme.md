@@ -25,6 +25,34 @@ coord2 = Coordinate(1,1,1, 1,1,1, 1,1,2)
 print(scroll + ", " + scrolls[coord2])
 ```
 
+## Indexed access
+
+`fetch` walks the buffer for each query (stopping early at a match), and
+`offset` rebuilds its index on every call. If you ask many questions of
+one buffer, build the index once instead:
+
+```
+from phext.indexed import IndexedPhext
+indexed = IndexedPhext(buffer)   # one pass over the buffer
+scroll = indexed.fetch(coord)    # dictionary lookup + slice per query
+```
+
+The price is one full pass at construction plus one dictionary entry per
+distinct coordinate, held while the object lives. For a single query,
+plain `fetch` is the better tool: it pays no build cost and stops at the
+first match. Offsets are character offsets into a string buffer, like
+the rest of the library.
+
+## Dense graphs
+
+Dense graphs: phext is sparse by design. Coordinate components are
+unbounded, but a fully-populated dense graph contains the product of its
+dimensions' extents in scrolls — a dense block spanning 1000 in each of
+9 dimensions implies 10^27 scrolls. Materializing, exploding, or indexing
+such a graph costs memory proportional to its populated scroll count.
+The old 999 cap never protected against this (999^9 was already
+unreachable); sparsity does. Keep graphs sparse.
+
 ## Development
 
 The project uses [uv](https://docs.astral.sh/uv/). From the repository root:
@@ -114,5 +142,8 @@ uv publish --publish-url https://test.pypi.org/legacy/ release-dist/*
   * `index_phokens(buffer)`: Computes the offsets of each scroll in the given phext
   * `index(buffer)`: Computes a hierarchical map of scroll offsets in phext format
   * `offset(buffer, coord)`: Computes the offset of a specific scroll in the given phext
+  * `index_offsets(buffer)`: One pass building a dictionary of Coordinate -> (char_offset, length) for every scroll in the buffer
+  * `indexed(buffer)`: Builds an `IndexedPhext` over the buffer (see Indexed access, below)
+* `IndexedPhext` (in `phext/indexed.py`): A buffer plus its offset index, built once. `fetch(coord)` answers from the index (a dictionary lookup plus a slice, `""` if absent), `coordinates()` lists the indexed coordinates, `explode()` returns the same dictionary as `Phext.explode`, and `len()` counts the buffer's scrolls.
 * `PositionedScroll`: A pair of `Coordinate` and a scroll of text.
 * `Range`: A pair of coordinates denoting an inclusive range across subspace

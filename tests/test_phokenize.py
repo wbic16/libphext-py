@@ -35,7 +35,7 @@ EDGE_CASES = [
   "3A\x17B2\x18C1",
   "\n\n\n",
   "\x02\x03\x07",
-  # saturation: more than 999 breaks in one dimension
+  # unbounded (0.4.0): more than 999 breaks in one dimension
   "a" + "\x17" * 1005 + "b",
   "a" + "\x17" * 998 + "b\x17c\x17d",
   "x" + "\x18" * 998 + "y" + "\x17" * 5 + "z\x18w\x17v",
@@ -110,8 +110,8 @@ def test_explode_implode_round_trip():
   for doc in DOCS:
     coords = [ps.coord.as_tuple() for ps in phext.phokenize(doc)]
     if coords != sorted(set(coords)):
-      # a saturated dimension (999) can make coordinates repeat or move backwards;
-      # such documents can't round trip through a dict (same as the legacy code)
+      # coordinates that repeat or move backwards can't round trip (legacy agrees);
+      # the unbounded walker no longer makes those via saturation; keep the guard
       continue
     exploded = phext.explode(doc)
     imploded = phext.implode(exploded)
@@ -193,7 +193,7 @@ def test_append_scroll_out_of_order():
   assert location == Coordinate.from_string("1.1.1/1.1.1/1.1.5")
 
 def large_document(scrolls: int) -> str:
-  # 500 scrolls per section keeps every coordinate well below the 999 cap
+  # 500 scrolls per section: exercises section breaks at scale
   parts = []
   for i in range(scrolls):
     if i > 0:
