@@ -93,6 +93,20 @@ class Phext:
         yield PositionedScroll(Coordinate(*walker), run.group())
         position = run.end()
 
+    def _iter_offsets(self, buffer:str) -> Iterator[tuple[Coordinate, int, int]]:
+      # The same single pass as _iter_scrolls (same walker, same breaks, same
+      # 999 saturation), but yielding each scroll's character offset and
+      # length instead of its text: (coordinate, start, length). Runs are the
+      # _SCROLL_TEXT matches, so start/length come straight from the regex.
+      walker = list(self.defaultCoordinate().as_tuple())
+      position = 0
+      for run in _SCROLL_TEXT.finditer(buffer):
+        start = run.start()
+        for index in range(position, start):
+          _apply_break(walker, _BREAK_DIMENSION[buffer[index]])
+        yield (Coordinate(*walker), start, run.end() - start)
+        position = run.end()
+
     def phokenize(self, buffer:str) -> List[PositionedScroll]:
       return list(self._iter_scrolls(buffer))
 
@@ -478,3 +492,23 @@ class Phext:
         fetch_coord = best
       index = self.dephokenize(output)
       return int(self.fetch(index, fetch_coord))
+
+    def index_offsets(self, buffer:str) -> dict[Coordinate, tuple[int, int]]:
+      # One pass over the buffer building coordinate -> (char_offset, length)
+      # for every scroll, so repeated fetches against one buffer stop paying
+      # a scan per query (fetch walks, and offset() rebuilds its index on
+      # every call). When two scrolls land on the same coordinate (possible
+      # once a dimension saturates at 999) the FIRST is kept, matching
+      # fetch(): it returns the first scroll at a coordinate.
+      offsets: dict[Coordinate, tuple[int, int]] = {}
+      for coord, start, length in self._iter_offsets(buffer):
+        if coord not in offsets:
+          offsets[coord] = (start, length)
+      return offsets
+
+    def indexed(self, buffer:str):
+      # Convenience constructor for phext.indexed.IndexedPhext: an object
+      # that builds the offset index once and answers fetches from it.
+      # Imported here to keep phext.indexed free to import this module.
+      from phext.indexed import IndexedPhext
+      return IndexedPhext(buffer)
