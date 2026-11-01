@@ -43,6 +43,16 @@ plain `fetch` is the better tool: it pays no build cost and stops at the
 first match. Offsets are character offsets into a string buffer, like
 the rest of the library.
 
+## Dense graphs
+
+Dense graphs: phext is sparse by design. Coordinate components are
+unbounded, but a fully-populated dense graph contains the product of its
+dimensions' extents in scrolls — a dense block spanning 1000 in each of
+9 dimensions implies 10^27 scrolls. Materializing, exploding, or indexing
+such a graph costs memory proportional to its populated scroll count.
+The old 999 cap never protected against this (999^9 was already
+unreachable); sparsity does. Keep graphs sparse.
+
 ## Development
 
 The project uses [uv](https://docs.astral.sh/uv/). From the repository root:

@@ -1,13 +1,17 @@
 from dataclasses import dataclass
 from functools import total_ordering
 
-COORDINATE_MAXIMUM = 1000
-
 def advance_coordinate(index: int) -> int:
-    # saturate at 999, matching libphext-rs: can't advance beyond the maximum
-    next = index + 1
-    return next if next < COORDINATE_MAXIMUM else index
+    # Coordinate components are unbounded (0.4.0): a break always advances.
+    return index + 1
 
+# Dense graphs: phext is sparse by design. Coordinate components are
+# unbounded, but a fully-populated dense graph contains the product of its
+# dimensions' extents in scrolls — a dense block spanning 1000 in each of
+# 9 dimensions implies 10^27 scrolls. Materializing, exploding, or indexing
+# such a graph costs memory proportional to its populated scroll count.
+# The old 999 cap never protected against this (999^9 was already
+# unreachable); sparsity does. Keep graphs sparse.
 @total_ordering
 @dataclass
 class Coordinate:
@@ -35,8 +39,8 @@ class Coordinate:
             if len(nums) != 9:
                 raise ValueError("Coordinate must have exactly 9 numeric parts")
 
-            if any(n < 1 or n > 999 for n in nums):
-                raise ValueError("All coordinate values must be between 1 and 999")
+            if any(n < 1 for n in nums):
+                raise ValueError("All coordinate values must be at least 1")
 
             return Coordinate(nums[0], nums[1], nums[2], nums[3], nums[4], nums[5], nums[6], nums[7], nums[8])
 

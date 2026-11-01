@@ -10,7 +10,8 @@ from phext.phext import Phext
 # test_indexed_explode_matches_explode
 # test_indexed_generated_document
 # test_indexed_empty_and_single_scroll
-# test_indexed_saturation_matches_fetch
+# test_indexed_unbounded_matches_fetch
+# test_indexed_fetch_beyond_999_chapter
 # test_index_offsets_built_once
 # test_phext_indexed_convenience_constructor
 
@@ -116,10 +117,11 @@ def test_indexed_empty_and_single_scroll():
   assert single.fetch(coord("1.1.1/1.1.1/1.1.1")) == "hello"
 
 
-def test_indexed_saturation_matches_fetch():
-  # 1005 scroll breaks: the scroll dimension saturates at 999, so several
-  # scrolls share coordinate .../1.1.999. fetch returns the first of them;
-  # the indexed reader must agree exactly.
+def test_indexed_unbounded_matches_fetch():
+  # 1005 scrolls: since 0.4.0 coordinates are unbounded, so the scrolls
+  # past 999 land on DISTINCT coordinates (.../1.1.1000, ...) instead of
+  # collapsing onto .../1.1.999 as the old saturation made them. Fetch,
+  # indexed fetch and explode must agree everywhere.
   phext = Phext()
   parts = []
   for i in range(1005):
@@ -127,21 +129,42 @@ def test_indexed_saturation_matches_fetch():
   buffer = SB.join(parts)
   indexed = IndexedPhext(buffer)
 
-  saturated = coord("1.1.1/1.1.1/1.1.999")
-  assert phext.fetch(buffer, saturated) == "s998"
-  assert indexed.fetch(saturated) == phext.fetch(buffer, saturated)
-  assert indexed.fetch(saturated) == "s998"
+  at_999 = coord("1.1.1/1.1.1/1.1.999")
+  at_1000 = coord("1.1.1/1.1.1/1.1.1000")
+  at_1005 = coord("1.1.1/1.1.1/1.1.1005")
+  assert phext.fetch(buffer, at_999) == "s998"
+  assert indexed.fetch(at_999) == "s998"
+  assert phext.fetch(buffer, at_1000) == "s999"
+  assert indexed.fetch(at_1000) == "s999"
+  assert indexed.fetch(at_1005) == "s1004"
 
-  # coordinates before saturation agree everywhere
   exploded = phext.explode(buffer)
   for c in exploded:
     assert indexed.fetch(c) == phext.fetch(buffer, c)
-  # explode keeps the LAST scroll at a duplicated coordinate, indexed too
   assert indexed.explode() == exploded
-  assert indexed.explode()[saturated] == "s1004"
-  # scroll count counts every scroll; the index holds distinct coordinates
+  assert indexed.explode()[at_1005] == "s1004"
+  # every scroll has its own coordinate now: nothing collapses
   assert len(indexed) == 1005
-  assert len(indexed.coordinates()) == 999
+  assert len(indexed.coordinates()) == 1005
+
+
+def test_indexed_fetch_beyond_999_chapter():
+  # a generated buffer with a scroll at chapter 1500: reachable and
+  # fetchable since 0.4.0 removed the cap (this is the CF dataset shape:
+  # row r at chapter r+2, most rows beyond 999)
+  phext = Phext()
+  entries = {
+    Coordinate(1, 1, 1, 1, 1, 1, 1, 1, 1): "first",
+    Coordinate(1, 1, 1, 1, 1, 1, 1500, 1, 1): "deep chapter",
+    Coordinate(1, 1, 1, 1, 1, 1, 16002, 3, 8): "deepest",
+  }
+  buffer = phext.implode(entries)
+  indexed = IndexedPhext(buffer)
+  for c, text in entries.items():
+    assert phext.fetch(buffer, c) == text
+    assert indexed.fetch(c) == text
+  assert indexed.explode() == phext.explode(buffer) == entries
+  assert len(indexed.coordinates()) == 3
 
 
 def test_index_offsets_built_once():

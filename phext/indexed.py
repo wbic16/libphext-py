@@ -8,12 +8,13 @@
 # keeps the buffer, so each fetch is a dict lookup plus a slice.
 #
 # Semantics are the library's own, by construction: the index is built by
-# the same walker Phext._iter_scrolls uses, so coordinates (including the
-# 999 saturation) agree with fetch/phokenize on any buffer. Where the two
-# could differ is duplicate coordinates (reachable only through
-# saturation): fetch returns the FIRST scroll at a coordinate and explode
-# keeps the LAST. The index follows fetch, and explode() below re-walks
-# the buffer so it stays identical to Phext.explode.
+# the same walker Phext._iter_scrolls uses, so coordinates agree with
+# fetch/phokenize on any buffer. Coordinates are unbounded (0.4.0), so a
+# walk never collapses distinct scrolls onto one coordinate the way the
+# old 999 saturation did. Should a coordinate ever repeat, fetch returns
+# the FIRST scroll there and explode keeps the LAST. The index follows
+# fetch, and explode() below re-walks the buffer so it stays identical
+# to Phext.explode.
 #
 # The trade is memory: one dict entry per distinct coordinate, held for
 # as long as the object lives. For a single query, Phext.fetch is the
@@ -65,6 +66,6 @@ class IndexedPhext:
     return self._phext.explode(self._buffer)
 
   def __len__(self) -> int:
-    # scroll count, as phokenize counts: duplicate coordinates (saturation)
-    # count once per scroll, so this can exceed len(coordinates())
+    # scroll count, as phokenize counts: every scroll counts, so this can
+    # exceed len(coordinates()) if a coordinate ever repeats
     return self._count
