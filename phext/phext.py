@@ -45,6 +45,8 @@ class Phext:
     LIBRARY_BREAK = "\x01"
     STX_BREAK = "\x02"
     ETX_BREAK = "\x03"
+    CHAIN_BREAK = "\x02"
+    CHAIN_CLOSE = "\x03"
     MORE_COWBELL = "\x07"
     SHELF_BREAK = "\x1F"
     SERIES_BREAK = "\x1E"
@@ -508,3 +510,28 @@ class Phext:
       # Imported here to keep phext.indexed free to import this module.
       from phext.indexed import IndexedPhext
       return IndexedPhext(buffer)
+
+    # --- 0.6.0: binary scrolls (phext.binary) + chains (phext.chain) ---
+    # Thin delegations so the byte-oriented entry points are reachable
+    # from the Phext class as well as their modules, mirroring how
+    # `indexed` above delegates to phext.indexed.
+
+    def insert_binary(self, buffer: str, coord: Coordinate, payload: bytes) -> str:
+      from phext.binary import insert_binary
+      return insert_binary(buffer, coord, payload)
+
+    def replace_binary(self, buffer: str, coord: Coordinate, payload: bytes) -> str:
+      from phext.binary import replace_binary
+      return replace_binary(buffer, coord, payload)
+
+    def fetch_binary(self, buffer: str, coord: Coordinate) -> bytes:
+      from phext.binary import fetch_binary
+      return fetch_binary(buffer, coord)
+
+    def insert_bytes(self, buffer: str, coord: Coordinate, payload: bytes) -> str:
+      from phext.binary import insert_bytes
+      return insert_bytes(buffer, coord, payload)
+
+    def replace_bytes(self, buffer: str, coord: Coordinate, payload: bytes) -> str:
+      from phext.binary import replace_bytes
+      return replace_bytes(buffer, coord, payload)
