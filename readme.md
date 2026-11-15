@@ -55,23 +55,25 @@ unreachable); sparsity does. Keep graphs sparse.
 
 ## Development
 
-The project uses [uv](https://docs.astral.sh/uv/). From the repository root:
+Every step below is one script in `scripts/`; the script is the procedure, and the underlying commands are listed so nothing has to be guessed. Run everything from the repository root.
 
-```bash
-uv sync
-```
+**Prerequisites**
 
-This creates `.venv` with phext installed from this checkout (editable) and the `dev` dependency group (pytest).
+1. Python 3.10 or newer (`requires-python` in `pyproject.toml`).
+2. [uv](https://docs.astral.sh/uv/) is the recommended tool. If uv is not installed, the scripts fall back automatically: they use an existing `.venv`, or create one with `python3 -m venv` and install this checkout with its dev extras via pip. No other setup is needed in either case.
 
 ### Test
 
-```bash
-uv run pytest
-```
+1. Run:
 
-pytest comes from the `dev` group, so the tests run in the project's environment against this checkout. `pyproject.toml` also puts the checkout on pytest's path, so a pytest from somewhere else still tests this code rather than a `phext` it finds installed.
+   ```bash
+   scripts/test.sh
+   ```
 
-To time the core operations on a real file:
+2. What it does, in order: with uv — `uv sync` (creates `.venv` with phext installed from this checkout, editable, plus the `dev` dependency group with pytest; the first sync also refreshes `uv.lock` to the version in `pyproject.toml`), then `uv run pytest`. Without uv — `.venv/bin/python -m pytest` if `.venv` exists, otherwise it creates `.venv` and runs `pip install -e ".[dev]"` first.
+3. Expected result: the full suite passes (80 tests at version 0.4.0). The script's exit code is pytest's exit code. `pyproject.toml` puts this checkout on pytest's path, so the tests always run against this code, never against a `phext` installed elsewhere.
+
+To time the core operations on a real file (optional):
 
 ```bash
 uv run python test/bench.py path/to/file.phext
@@ -81,34 +83,39 @@ It reports explode, implode, textmap, index, and fetch (of the last scroll). Nam
 
 ### Build
 
-1. Set the new version in both `pyproject.toml` and `phext/__init__.py`.
-2. Build into an empty folder. `dist/` holds older builds that are checked into git, and `uv publish` would try to upload those too. Delete `release-dist` first if it is left over from a previous release.
+1. Set the new version number in **both** `pyproject.toml` (`version = "..."`) and `phext/__init__.py` (`__version__ = "..."`). The build refuses to run if the two disagree.
+2. Run:
 
    ```bash
-   uv build --out-dir release-dist
+   scripts/build.sh
    ```
 
-3. Check the package metadata, then import the wheel in a throwaway environment (use the version you just built):
+3. What it does, in order: reads both version strings and fails loudly if they differ; deletes `release-dist/` so only this build can be published from it; builds with `uv build --out-dir release-dist` (fallback: `python -m build --outdir release-dist`, installing the `build` package into `.venv` if needed); lists the artifacts.
+4. Expected result: exactly two artifacts, `release-dist/phext-<version>.tar.gz` (sdist) and `release-dist/phext-<version>-py3-none-any.whl` (wheel). Note: `dist/` in this repository holds old builds that are checked into git — never publish from `dist/`.
+5. Optional checks before publishing: `uvx twine check release-dist/*`, and import the wheel in a throwaway environment (substitute the version you just built):
 
    ```bash
-   uvx twine check release-dist/*
-   ```
-
-   ```bash
-   uv run --isolated --no-project --with release-dist/phext-0.3.2-py3-none-any.whl python -c "import phext; print(phext.__version__)"
+   uv run --isolated --no-project --with release-dist/phext-0.4.0-py3-none-any.whl python -c "import phext; print(phext.__version__)"
    ```
 
 ### Publish
 
-```bash
-uv publish release-dist/*
-```
+1. Get a PyPI API token for the `phext` project. Credentials come from the environment or your keyring — never from a file in this repository.
+2. Rehearse (no upload happens):
 
-This needs a PyPI API token for the `phext` project: set `UV_PUBLISH_TOKEN`, or pass `--token`. To rehearse on TestPyPI first (it uses a separate account and token):
+   ```bash
+   scripts/publish.sh
+   ```
 
-```bash
-uv publish --publish-url https://test.pypi.org/legacy/ release-dist/*
-```
+   It runs `scripts/test.sh`, then `scripts/build.sh`, then prints the exact artifacts and version it would publish, and stops. If the tests fail, it stops there.
+3. Publish for real:
+
+   ```bash
+   UV_PUBLISH_TOKEN=<token> PUBLISH_CONFIRM=1 scripts/publish.sh
+   ```
+
+   With uv it runs `uv publish release-dist/*`; without uv it runs `python -m twine upload release-dist/*` (set `TWINE_USERNAME=__token__` and `TWINE_PASSWORD=<token>` instead). Without `PUBLISH_CONFIRM=1` the script never uploads anything.
+4. To rehearse against TestPyPI instead (separate account and token), run the publish command directly: `uv publish --publish-url https://test.pypi.org/legacy/ release-dist/*`.
 
 ## Data Types
 
